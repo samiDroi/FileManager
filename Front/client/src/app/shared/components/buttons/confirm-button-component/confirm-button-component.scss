@@ -1,0 +1,89 @@
+// 1. Paleta de colores (Puedes cambiarlos por los de CattFileManager)
+$color-primary: #0f172a;    // Azul oscuro casi negro
+$color-primary-hover: #334155;
+
+$color-success: #10b981;    // Verde esmeralda
+$color-success-hover: #059669;
+
+$color-danger: #ef4444;     // Rojo alerta
+$color-danger-hover: #dc2626;
+
+$color-secondary: #e2e8f0;  // Gris claro
+$color-secondary-text: #475569;
+$color-secondary-hover: #cbd5e1;
+
+// 2. Estilos base del botón
+.custom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; // Espacio entre el ícono y el texto
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px; // Bordes redondeados modernos
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: 100%; // Ocupa el 100% de su contenedor (ideal para formularios)
+
+  // 3. Variantes de color
+  &.btn-primary {
+    background-color: $color-primary;
+    color: white;
+    &:hover:not(:disabled) { background-color: $color-primary-hover; }
+  }
+
+  &.btn-success {
+    background-color: $color-success;
+    color: white;
+    &:hover:not(:disabled) { background-color: $color-success-hover; }
+  }
+
+  &.btn-danger {
+    background-color: $color-danger;
+    color: white;
+    &:hover:not(:disabled) { background-color: $color-danger-hover; }
+  }
+
+  &.btn-secondary {
+    background-color: $color-secondary;
+    color: $color-secondary-text;
+    &:hover:not(:disabled) { background-color: $color-secondary-hover; }
+  }
+
+  // 4. Estados: Deshabilitado o Cargando
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    // Efecto visual sutil cuando está deshabilitado
+    transform: none; 
+    box-shadow: none;
+  }
+}
+
+// 5. Contenedor del texto de carga y el spinner
+.loader-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// 6. El Spinner (Círculo giratorio de puro CSS)
+.spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+  // El borde transparente con un lado blanco crea la ilusión del giro
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor; // Toma el color del texto actual
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+// La animación que hace girar el spinner 360 grados
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

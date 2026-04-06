@@ -1,0 +1,77 @@
+/* Contenedor principal del input */
+.c-input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  position: relative; /* Crucial para posicionar el botón del ojito */
+  width: 100%;
+}
+
+/* El campo de texto en sí */
+.c-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Estado Focus (cuando el usuario hace clic adentro) */
+.c-input:focus {
+  border-color: #3f7afc;
+  box-shadow: 0 0 0 3px rgba(63, 122, 252, 0.15);
+}
+
+/* Estado de Error (bordes rojos) */
+.c-input.c-input-error {
+  border-color: #e53e3e;
+}
+
+.c-input.c-input-error:focus {
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
+}
+
+/* Ajuste específico para cuando es tipo password (deja espacio para el ojito) */
+.c-password-group .c-input {
+  padding-right: 48px; 
+}
+
+/* El botón transparente del ojito de la contraseña */
+.c-password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 12px; /* Ajusta este valor si tu input cambia de altura */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6a6a6a;
+  transition: transform 0.1s ease;
+}
+
+.c-password-toggle:active {
+  transform: scale(0.9);
+}
+
+/* Contenedor de los mensajes de error */
+.c-error-message {
+  margin-top: 6px;
+  color: #e53e3e;
+  font-size: 13px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Pequeña animación para que el error aparezca suavemente */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

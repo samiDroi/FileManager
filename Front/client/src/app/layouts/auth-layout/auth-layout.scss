@@ -1,0 +1,17 @@
+.auth-layout-wrapper {
+  /* Hacemos que el contenedor sea flexible */
+  display: flex;
+  
+  /* Centrado vertical */
+  align-items: center; 
+  
+  /* Centrado horizontal */
+  justify-content: center; 
+  
+  /* Le decimos que ocupe, como mínimo, el 100% del alto de la pantalla */
+  min-height: 100vh; 
+  width: 100%;
+  
+  /* Opcional: Un fondo gris muy sutil para que tu tarjeta blanca resalte más */
+  background-color: #f3f4f6; 
+}

@@ -1,0 +1,32 @@
+<div class="c-input-group" [class.c-password-group]="type === 'password'">
+  @if(label) {
+    <label [for]="id" class="form-label">{{ label }}</label>
+  }
+  <input 
+    [id]="id"
+    [type]="inputType" 
+    [formControl]="control" 
+    [placeholder]="placeholder"
+    class="c-input"
+    [class.c-input-error]="control.touched && control.invalid">
+  
+  @if (type === 'password') {
+    <button 
+      type="button" 
+      (click)="togglePasswordVisibility()" 
+      class="c-password-toggle">
+      <span class="icon-eye">{{ isPasswordVisible ? '👁️' : '🕶' }}</span>
+    </button>
+  }
+
+  @if (control.touched && control.invalid) {
+    <div class="c-error-message">
+      @if (control.hasError('required')) {
+        <small>Este campo es requerido.</small>
+      }
+      @if (control.hasError('email')) {
+        <small>Formato de correo inválido.</small>
+      }
+    </div>
+  }
+</div>

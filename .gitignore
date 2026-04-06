@@ -1,0 +1,24 @@
+# ========================
+# Variables de Entorno y Secretos
+# ========================
+.env
+.env.*
+*.local
+
+# ========================
+# Node & Angular (Front)
+# ========================
+node_modules/
+dist/
+.angular/
+.npm/
+
+# ========================
+# Go (Back)
+# ========================
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
