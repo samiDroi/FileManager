@@ -3,6 +3,7 @@ import { FormArray, FormBuilder, FormControl, FormGroup, NonNullableFormBuilder,
 import { Router } from '@angular/router';
 import { ConfirmButtonComponent, FormInput, } from '../../../shared/components';
 import { AuthService } from '../../auth-service';
+import { AppRoutes } from '../../../core/routes/appRoutes';
 
 
 @Component({
@@ -36,7 +37,7 @@ export class RegisterComponent {
     this.authService.register(formData).subscribe({
       next: (response) => {
         console.log('Registro exitoso:', response);
-        this.router.navigate(['/auth/login']);
+        this.router.navigate([AppRoutes.auth.login]);
       },
       error: (error) => {
         console.error('Error en registro:', error);

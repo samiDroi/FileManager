@@ -1,9 +1,11 @@
 import { Routes } from "@angular/router";
 import { AuthLayout } from "../layouts";
-import { AppRoutes } from "../core/constants.routes";
+import { AppRoutes } from "../core/routes/appRoutes";
 
 export const AuthRoutes: Routes = [
     {
+        //path is '', because these routes will be loaded under the main path defined in app.routes.ts
+        //so the routes are like /login, /register, etc, but they are grouped under the same layout
         path: '',
         component: AuthLayout, 
         //grouping all auth related routes under the same layout

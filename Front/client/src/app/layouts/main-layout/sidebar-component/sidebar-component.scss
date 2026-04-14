@@ -1,0 +1,192 @@
+@import "../../../../styles/variables.css";
+
+.sidebar-container {
+  background-color: var(--color-bg-main);
+  // height: 100vh;
+  height: calc(100vh - 20px);
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  margin-left: 30px;
+  margin-right: 30px;
+
+  // 1. ESTILO PARA LA PALABRA "Menu" SUPERIOR
+  // Usamos ">" para apuntar solo al .label que es hijo directo del contenedor principal
+  > .label {
+    font-size: 0.75rem;
+    color: #9ca3af; // Gris claro
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase; // Para que se vea como el "GENERAL" de la foto
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+  }
+}
+
+// 2. EL TÍTULO "Mi App"
+.brand {
+  height: 6rem;
+  display: flex;
+  padding: 1.5rem 1.5rem 3rem 1.5rem;
+  align-items: center;
+  justify-content: center;
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827; // Casi negro
+  }
+}
+
+// 3. EL CONTENEDOR DE ENLACES
+.nav-menu {
+  flex: 1; // Empuja el footer hacia abajo
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// 4. LOS ENLACES Y ANIMACIONES
+.nav-item {
+  position: relative; 
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700px;
+  color: var(--color-text); // Color gris base
+  transition: all 0.2s ease;
+
+  i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+    color: var(--color-text) !important;
+    transition: color 0.3s ease;
+  }
+
+  // Animación de crecer suavemente
+  &:hover {
+    transform: scale(1.05); 
+    transform-origin: left center;
+  }
+
+  // Cuando haces hover o estás en la ruta activa
+  &:hover, &.active {
+    color: #000000; // El texto cambia a negro fuerte
+    // font-weight: 600; // Letra más gruesa
+
+    i {
+      color: var(--color-green-hover) !important; // El icono se vuelve verde
+    }
+  }
+
+  // La barra vertical verde de la ruta activa
+  &.active {
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 60%; 
+      width: 4px; 
+      background-color: var(--color-green-hover); 
+      border-radius: 0 4px 4px 0;
+    }
+  }
+}
+// 5. SECCIÓN INFERIOR (USUARIO)
+.user-footer {
+  margin-top: auto; // ¡Importante! Esto empuja el footer hacia el fondo de la pantalla
+  padding: 1.5rem;
+  border-top: 1px solid #f3f4f6; // Una línea divisoria sutil en lugar de un fondo de color
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+// Tarjetita con los datos del usuario
+.user-info {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  background-color: #f9fafb; // Un fondo gris súper claro para encapsularlo
+  border-radius: 12px; // Bordes suaves
+  border: 1px solid #e5e7eb; // Borde delicado
+
+  .name { 
+    font-weight: 700; 
+    color: #111827; // Texto oscuro para que resalte
+    font-size: 0.95rem;
+    margin-bottom: 0.1rem;
+  }
+  
+  .role { 
+    font-size: 0.8rem; 
+    color: #6b7280; // Gris para el correo
+    white-space: nowrap; // Evita que el correo se rompa en dos líneas
+    overflow: hidden;
+    text-overflow: ellipsis; // Si el correo es muy largo, le pondrá "..." al final
+  }
+}
+
+// Botón de Cerrar Sesión Moderno
+.logout-btn {
+  width: 100%;
+  background-color: #000000; // Un rojo pastel ultra claro
+  color: #c2bfbf; // Texto rojo para indicar la acción destructiva
+  padding: 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--color-bg-danger);
+    color: #ecf0f1;
+    transform: translateY(-1px); // Pequeño salto al pasar el ratón
+  }
+}
+// // 5. SECCIÓN INFERIOR (USUARIO)
+// .user-footer {
+//   background-color: var(--color-green-hover);
+//   border-radius: 20px;
+//   padding: 1.5rem;
+//   border-top: 1px solid #e5e7eb; // Línea separadora sutil
+//   display: flex;
+//   flex-direction: column;
+//   gap: 1rem;
+// }
+
+// .user-info {
+//   display: flex;
+//   flex-direction: column;
+  
+//   .name { 
+//     font-weight: 600; 
+//     color: var(--color-primary) // Texto oscuro para el nombre
+//   }
+//   .role { 
+//     font-size: 0.8rem; 
+//     color: #9ca3af; // Texto gris para el correo
+//   }
+// }
+
+// .logout-btn {
+//   background-color: #ef4444; // Rojo
+//   color: white;
+//   border: none;
+//   padding: 0.5rem;
+//   border-radius: 4px;
+//   cursor: pointer;
+//   transition: background-color 0.2s;
+//   font-weight: 600;
+
+//   &:hover {
+//     background-color: #dc2626; // Rojo más oscuro en hover
+//   }
+// }

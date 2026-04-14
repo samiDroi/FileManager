@@ -1,1 +1,19 @@
-<p>main-layout works!</p>
+<div class="layout-wrapper">
+  
+  <app-sidebar 
+    class="layout-sidebar"
+    [userData]="currentUser()" 
+    (onLogout)="handleLogout()">
+  </app-sidebar>
+
+  <main class="layout-main">
+    <header class="topbar">
+      <h2>Bienvenido de nuevo</h2>
+    </header>
+    
+    <section class="content-area">
+      <router-outlet></router-outlet> 
+    </section>
+  </main>
+
+</div>

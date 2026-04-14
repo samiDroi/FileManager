@@ -1,0 +1,13 @@
+:root {
+    /*hover colors*/
+    --color-green-hover: #009432;
+    --color-text-hover: #2c3e50;
+
+    /*text colors*/
+    --color-text: #95a5a6;
+    --color-primary: #2c3e50;
+    /*bg colors*/
+    --color-bg-main: #ecf0f1;
+    --color-bg-secondary: #bdc3c7;
+    --color-bg-danger: #e74c3c;
+}

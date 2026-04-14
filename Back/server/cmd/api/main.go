@@ -33,11 +33,15 @@ func main() {
 	db := store.InitDB(config.Config.DBConn)
 
 	e := echo.New()
-
+	// 🌟 ACTIVA CORS PARA QUE ANGULAR PUEDA ENTRAR
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:4200"}, // El puerto de tu Angular
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
 	// 2. Middlewares Globales
 	e.Use(middleware.RequestLogger()) // Para ver qué pasa en la consola
 	e.Use(middleware.Recover())       // Para que el servidor no muera si hay un error grave
-	e.Use(middleware.CORS())          // Importante para conectar con Angular
 
 	// 3. Conectar las Rutas (Inyectamos la DB aquí)
 	// Esta función para usar paths y handlers

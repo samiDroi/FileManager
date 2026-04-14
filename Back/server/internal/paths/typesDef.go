@@ -42,6 +42,7 @@ type StandardResource struct {
 	New    Static
 	Edit   Dynamic[int64]
 	Delete Dynamic[int64]
+	Search Static
 }
 
 // --- FUNCIONES CONSTRUCTORAS ---
@@ -66,6 +67,7 @@ func NewResource(prefix string) StandardResource {
 			Route:   "/:id",
 			Builder: func(id int64) string { return path.Join(prefix, fmt.Sprintf("%d", id)) },
 		},
+		Search: newStatic(prefix, "/search"),
 	}
 }
 
@@ -84,3 +86,29 @@ func buildQuery(baseURL string, query map[string]string) string {
 	}
 	return fmt.Sprintf("%s%s%s", baseURL, separator, queryString)
 }
+
+//if you feel confused, here's the routes in basic string format:
+/*
+// standard CRUD routes
+"/client"           // Index
+"/client/new"       // New
+"/client/edit/:id"  // Edit
+"/client/:id"       // Delete
+
+"/proyect"          // Index
+"/proyect/new"      // New
+"/proyect/edit/:id" // Edit
+"/proyect/:id"      // Delete
+
+"/file"             // Index
+"/file/new"         // New
+"/file/edit/:id"    // Edit
+"/file/:id"         // Delete
+
+// Specials routes
+"/login"
+"/register"
+"/logout"
+"/overview"         // Dashboard Index
+"/overview/settings" // Dashboard Settings
+*/

@@ -1,0 +1,20 @@
+<div class="header">
+  <h2>Gestion de clientes</h2>
+  <button (click)="openCreateClientModal()" class="btn-primary">
+    + Nuevo Cliente
+  </button>
+</div>
+
+<div class="toolbar">
+  <app-ui-search-bar 
+    placeholder="Buscar clientes..." 
+    (search)="onSearch($event)">
+  </app-ui-search-bar>
+</div>
+
+<app-list-clients 
+  [clients]="clientsList()" 
+  [isLoading]="loading()"
+  (createClient)="openCreateClientModal()"
+  (editClient)="openEditClientModal($event)">
+</app-list-clients>

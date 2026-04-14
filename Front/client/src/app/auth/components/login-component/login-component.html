@@ -5,12 +5,12 @@
     <h1 class="c-title">Sign in</h1>
   </header>
 
-  <form [formGroup]="signInForm" (ngSubmit)="onSignIn()" class="c-form">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="c-form">
     
     <app-form-input 
-      type="email"
-      placeholder="Email address"
-      [control]="emailControl">
+      type="text"
+      placeholder="Username"
+      [control]="usernameControl">
     </app-form-input>
 
     <app-form-input 
@@ -19,7 +19,7 @@
       [control]="passwordControl">
     </app-form-input>
 
-    <button type="submit" class="c-button-primary" [disabled]="signInForm.invalid">
+    <button type="submit" class="c-button-primary" [disabled]="loginForm.invalid">
       Sign in
     </button>
   </form>

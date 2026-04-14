@@ -1,0 +1,39 @@
+<aside class="sidebar-container">
+  <div class="brand">
+    <h1>Mi App</h1>
+  </div>
+ <span class="label">Menu</span>
+ <nav class="nav-menu">
+ 
+  <a routerLink="/usuarios" routerLinkActive="active" class="nav-item">
+    <i class="fa fa-users"></i> 
+    <span class="label">Usuarios</span>
+  </a>
+
+  <a routerLink="/archivos" routerLinkActive="active" class="nav-item">
+    <i class="fa fa-folder-open"></i> 
+    <span class="label">Archivos</span>
+  </a>
+
+  <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
+    <i class="fa fa-briefcase"></i> 
+    <span class="label">Clientes</span>
+  </a>
+
+  <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
+    <i class="fa fa-cog"></i> 
+    <span class="label">Configuración</span>
+  </a>
+</nav>
+  
+@if(userData){
+    <div class="user-footer">
+    <div class="user-info">
+      <!-- {{ userData }} -->
+      <span class="name">{{ userData.username }}</span>
+      <span class="role">{{ userData.email }}</span>
+    </div>
+    <button class="logout-btn" (click)="emitLogout()">Cerrar Sesión</button>
+  </div>
+}
+</aside>

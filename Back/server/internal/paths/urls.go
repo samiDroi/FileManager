@@ -13,13 +13,13 @@ var Auth = struct {
 	Login    Static
 	Register Static
 	Logout   Static
-}{Prefix: "/auth"}
+}{Prefix: ""}
 
 var Dashboard = struct {
 	Prefix   string
 	Index    Static
 	Settings Static
-}{Prefix: "/dashboard"}
+}{Prefix: "/overview"}
 
 // 3. INICIALIZADOR DE RUTAS ESPECIALES
 func init() {
@@ -31,4 +31,5 @@ func init() {
 	// Dashboard
 	Dashboard.Index = newStatic(Dashboard.Prefix, "")
 	Dashboard.Settings = newStatic(Dashboard.Prefix, "/settings")
+
 }

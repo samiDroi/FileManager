@@ -1,9 +1,10 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
-	// "server/internal/http/handlers/auth/dto"
 	"server/internal/domain/models"
+	"server/internal/http/api"
 	"server/internal/paths"
 	"server/internal/services"
 	"server/internal/store/repository"
@@ -34,9 +35,6 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	g.POST(paths.Auth.Login.Route, h.Login)
 }
 
-// func (h *AuthHandler) Login(c echo.Context) error {
-
-// }
 func (h *AuthHandler) Register(c echo.Context) error {
 	req := new(RegisterRequest)
 
@@ -53,21 +51,27 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		Password: req.Password,
 	}
 	//call service to register the user
-	err := h.service.RegisterUser(c, userDto)
+	user, err := h.service.RegisterUser(c, userDto)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Error al guardar en base de datos: " + err.Error(),
 		})
 	}
 
-	//exit response
-	return c.JSON(http.StatusCreated, map[string]string{
-		"message": "¡Usuario registrado correctamente!",
+	// Generar JWT token to login
+	token, err := createToken(c, user.ID, user.Username, user.Email)
+
+	//exit response with token
+	return c.JSON(http.StatusCreated, UserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Token:    token,
 	})
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
-	req := new(RegisterRequest)
+	req := new(LoginRequest)
 
 	//validate the request json body
 	if err := c.Bind(req); err != nil {
@@ -75,15 +79,37 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			"error": "El formato de los datos es inválido",
 		})
 	}
-
+	fmt.Print(req.Username, req.Password)
 	//call service to login the user
-	user, err := h.service.LoginUser(c, req.Email, req.Password)
+	user, err := h.service.LoginUser(c, req.Username, req.Password)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"error": "Credenciales inválidas: " + err.Error(),
+		fmt.Printf("DEBUG: Error en Scan de base de datos: %v\n", err) // <--- ESTO te dirá la verdad
+		return err
+	}
+	// if err != nil {
+	// 	return c.JSON(http.StatusUnauthorized, map[string]string{
+	// 		"error": "Credenciales inválidas: " + err.Error(),
+	// 	})
+	// }
+
+	// Generar JWT token
+
+	token, err := createToken(c, user.ID, user.Username, user.Email)
+	//exit response with token
+	return c.JSON(http.StatusOK, UserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Token:    token,
+	})
+}
+
+func createToken(c echo.Context, user_ID int, username string, user_Email string) (string, error) {
+	token, err := api.GenerateToken(user_ID, username, user_Email)
+	if err != nil {
+		return "", c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Error al generar token: " + err.Error(),
 		})
 	}
-
-	//exit response with user data
-	return c.JSON(http.StatusOK, user)
+	return token, err
 }

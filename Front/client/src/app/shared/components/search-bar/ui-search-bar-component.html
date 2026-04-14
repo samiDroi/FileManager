@@ -1,0 +1,14 @@
+<div class="search-container">
+  <i class="fa fa-search search-icon"></i>
+  <input 
+    type="text" 
+    class="search-input" 
+    [placeholder]="placeholder()"
+    [(ngModel)]="searchTerm"
+    (ngModelChange)="onInput($event)">
+  @if (searchTerm) {
+    <button class="clear-btn" (click)="onClear()">
+      <i class="fa fa-times"></i>
+    </button>
+  }
+</div>

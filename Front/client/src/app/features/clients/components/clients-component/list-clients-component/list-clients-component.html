@@ -1,0 +1,36 @@
+@if(isLoading){
+  <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
+    <p>Cargando clientes...</p>
+  </div>
+}@else{
+  <ng-template #clientRow let-client>
+    <td>
+      <div class="cell-main-text">{{ client.name }}</div>
+    </td>
+    <td>
+      <span class="status-badge active">{{ client.id }}</span>
+    </td>
+  </ng-template>
+
+
+  <app-ui-table 
+    [data]="clients" 
+    [rowTemplate]="clientRow" 
+    [colSpan]="3"
+    (createItem)="onCreateItem($event)"
+    (editItem)="onEditItem($event)">
+    
+    <thead>
+      <tr>
+        <th>Nombre del Cliente</th>
+        <th>ID / Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    
+    <div empty-state>
+      <p>No hay clientes disponibles.</p>
+    </div>
+    
+  </app-ui-table>
+}

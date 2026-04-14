@@ -33,6 +33,10 @@ func Load() {
 	if Config.DBConn == "" {
 		log.Fatal("[!] DB_CONN no está definida en el entorno")
 	}
+	// Validación de seguridad: Sin secreto, no hay JWT seguro.
+	if Config.SecretKey == "" {
+		log.Fatal("[!] SECRET_KEY no está definida en el entorno. Imposible firmar tokens.")
+	}
 }
 
 // Función auxiliar simple

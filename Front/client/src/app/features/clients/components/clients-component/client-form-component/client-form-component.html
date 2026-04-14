@@ -1,0 +1,29 @@
+<div class="custom-modal-container">
+      
+      <div class="modal-header">
+        <h2>{{ isEdit ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
+        <button class="close-icon" (click)="onCancel()">×</button>
+      </div>
+      
+      <form [formGroup]="clientForm" class="modal-body">
+        <div class="input-group">
+          <label>Nombre completo</label>
+          <input type="text" formControlName="name" placeholder="Ej. Juan Pérez">
+        </div>
+
+        <!-- <div class="input-group">
+          <label>Correo electrónico</label>
+          <input type="email" formControlName="email" placeholder="juan@correo.com">
+        </div> -->
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
+        <button class="btn-save" 
+                [disabled]="clientForm.invalid" 
+                (click)="onSubmit()">
+          {{ isEdit ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+
+    </div>
