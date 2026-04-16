@@ -11,7 +11,7 @@ import (
 func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Obtener el token del header Authorization
-		token, err := api.GetTokenByBearerAuth(c)
+		token, err := api.GetTokenCookie(c)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{
 				"error": "Token de autenticación no válido",
@@ -30,7 +30,6 @@ func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("user", claims)
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
-		c.Set("email", claims.Email)
 
 		return next(c)
 	}

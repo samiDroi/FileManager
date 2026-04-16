@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"server/internal/config"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 type Claims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
-	Email    string `json:"email"`
+	// Email    string `json:"email"`
 	jwt.StandardClaims
 }
 
@@ -28,7 +29,7 @@ func GenerateToken(userID int, username, email string) (string, error) {
 	claims := &Claims{
 		UserID:   userID,
 		Username: username,
-		Email:    email,
+		// Email:    email,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), // Expira en 24 horas
 			IssuedAt:  time.Now().Unix(),
@@ -47,6 +48,37 @@ func GenerateToken(userID int, username, email string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+func SetTokenCookie(c echo.Context, tokenString string) {
+	cookie := new(http.Cookie)
+	cookie.Name = "session_token"
+	cookie.Value = tokenString
+	cookie.Expires = time.Now().Add(24 * time.Hour)
+	cookie.HttpOnly = true
+	cookie.Secure = config.Config.CookieSecure
+	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Path = "/"
+
+	c.SetCookie(cookie)
+}
+func GetTokenCookie(c echo.Context) (string, error) {
+	cookie, err := c.Cookie("session_token")
+	if err != nil {
+		return "", echo.NewHTTPError(http.StatusUnauthorized, "not session token found")
+	}
+	return cookie.Value, nil
+}
+func ClearCookie(c echo.Context) {
+	cookie := new(http.Cookie)
+	cookie.Name = "session_token"
+	cookie.Value = ""
+	cookie.Expires = time.Now().Add(-1 * time.Hour)
+	cookie.Path = "/"
+	cookie.HttpOnly = true
+	cookie.Secure = config.Config.CookieSecure
+	cookie.SameSite = http.SameSiteStrictMode
+
+	c.SetCookie(cookie)
 }
 
 // ValidarToken valida un JWT token y retorna los claims si es válido
@@ -73,17 +105,17 @@ func ValidateToken(tokenString string) (*Claims, error) {
 }
 
 // ObtenerTokenDesdeBearerAuth extrae el token del header Authorization
-func GetTokenByBearerAuth(c echo.Context) (string, error) {
-	auth := c.Request().Header.Get("Authorization")
-	if auth == "" {
-		return "", echo.NewHTTPError(401, "token de autenticación no proporcionado")
-	}
+// func GetTokenByBearerAuth(c echo.Context) (string, error) {
+// 	auth := c.Request().Header.Get("Authorization")
+// 	if auth == "" {
+// 		return "", echo.NewHTTPError(401, "token de autenticación no proporcionado")
+// 	}
 
-	// Validar que sea Bearer token
-	const bearerScheme = "Bearer "
-	if len(auth) < len(bearerScheme) || auth[:len(bearerScheme)] != bearerScheme {
-		return "", echo.NewHTTPError(401, "formato de token inválido")
-	}
+// 	// Validar que sea Bearer token
+// 	const bearerScheme = "Bearer "
+// 	if len(auth) < len(bearerScheme) || auth[:len(bearerScheme)] != bearerScheme {
+// 		return "", echo.NewHTTPError(401, "formato de token inválido")
+// 	}
 
-	return auth[len(bearerScheme):], nil
-}
+// 	return auth[len(bearerScheme):], nil
+// }

@@ -4,7 +4,11 @@
     <img src="https://img.logo.dev/logos/column.com?token=pk_logo_r4k_z1h_j7b_l0n_c6m_y8j" alt="Company Logo" class="c-logo">
     <h1 class="c-title">Sign in</h1>
   </header>
-
+  @if (errorMessage()) {
+    <div class="error-alert" role="alert">
+      {{ errorMessage() }}
+    </div>
+  }
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="c-form">
     
     <app-form-input 

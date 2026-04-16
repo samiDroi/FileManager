@@ -119,3 +119,47 @@
 .c-button-secondary:active {
   background-color: #ededed;
 }
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; // Espacio por si decides agregar un ícono
+  background-color: #fef2f2; // Fondo rojo muy suave
+  color: #b91c1c; // Texto rojo oscuro (buen contraste para accesibilidad)
+  border: 1px solid #fca5a5; // Borde rojo intermedio
+  border-radius: 8px; // Bordes redondeados modernos
+  padding: 0.75rem 1rem; // Espaciado interno
+  font-size: 0.875rem; // Tamaño de fuente ligeramente más pequeño (14px)
+  font-weight: 500; // Letra un poco más gruesa para legibilidad
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem; // Separación con el botón de "Iniciar Sesión"
+  
+  // Animación para que aparezca suavemente y llame la atención
+  animation: shakeAndFade 0.4s ease-out forwards;
+
+  // Opcional: Si quieres ponerle un ícono de advertencia antes del texto
+  &::before {
+    content: "⚠️"; // Puedes cambiar esto por un SVG de FontAwesome o similar
+    font-size: 1rem;
+  }
+}
+
+// Keyframes para la animación (Aparece y hace un ligero movimiento de lado a lado)
+@keyframes shakeAndFade {
+  0% {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  25% {
+    transform: translateX(5px);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

@@ -13,6 +13,7 @@ type Environment struct {
 	SecretKey    string
 	AuthKey      string
 	AllowOrigins string
+	CookieSecure bool
 }
 
 var Config Environment
@@ -26,7 +27,8 @@ func Load() {
 		DBConn:       getEnv("DB_CONN", ""),
 		SecretKey:    getEnv("SECRET_KEY", ""),
 		AuthKey:      getEnv("AUTH_KEY", ""),
-		AllowOrigins: getEnv("ALLOW_ORIGINS", "*"),
+		AllowOrigins: getEnv("ALLOW_ORIGINS", "http://localhost:4200"),
+		CookieSecure: getEnv("COOKIE_SECURE", "false") == "true",
 	}
 
 	// Validación rápida: Si no hay base de datos, el servidor no puede funcionar.

@@ -13,22 +13,24 @@ import { MatFormFieldModule } from '@angular/material/form-field';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientFormComponent implements OnInit {
-  //im using container presentational but the formulary is so simple so i injected this here
   private fb = inject(FormBuilder)
   protected data = inject(MAT_DIALOG_DATA)
   private dialogRef = inject(MatDialogRef<ClientFormComponent>)
   public isEdit = false;
 
   clientForm = this.fb.group({
-    name: [this.data?.client?.name || '',Validators.required]
+    name: [this.data?.client?.name || '', Validators.required],
+    email: [this.data?.client?.contact_info?.email || ''],
+    contact_phone: [this.data?.client?.contact_info?.contact_phone || '']
   })
 
   ngOnInit(): void {
     if(this.data && this.data.client){
       this.isEdit = true
-
       this.clientForm.patchValue({
-        name: this.data.client.name
+        name: this.data.client.name,
+        email: this.data.client.contact_info?.email || '',
+        contact_phone: this.data.client.contact_info?.contact_phone || ''
       })
     }
   }
@@ -37,27 +39,22 @@ export class ClientFormComponent implements OnInit {
     this.dialogRef.close(null)
   }
 
-onSubmit(){
+  onSubmit(){
     if(this.clientForm.valid){
-      
-      // 1. Extraemos el valor asegurándonos de que es un string
       const formName = this.clientForm.get('name')?.value || '';
+      const formEmail = this.clientForm.get('email')?.value || null;
+      const formPhone = this.clientForm.get('contact_phone')?.value || null;
+      //payload: important data to send to the database
+      const payload: any = { name: formName }
 
-      // 2. Si es MODO EDICIÓN, mandamos el ID y el Name
+      if (formEmail) payload.email = formEmail;
+      if (formPhone) payload.contact_phone = formPhone;
+
       if (this.isEdit) {
-        const updatePayload = {
-          id: this.data.client.id,
-          name: formName
-        };
-        this.dialogRef.close(updatePayload);
-      } 
-      // 3. Si es MODO CREACIÓN, mandamos SOLO el Name (Justo lo que Go pide)
-      else {
-        const createPayload = {
-          name: formName
-        };
-        this.dialogRef.close(createPayload);
+        payload.id = this.data.client.id;
       }
+
+      this.dialogRef.close(payload);
     }
   }
 }

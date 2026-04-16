@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"server/internal/config"
-	"server/internal/routes" // Importamos tu nuevo sistema de rutas
+	"server/internal/routes"
 	"server/internal/store"
 
 	"github.com/labstack/echo/v4"
@@ -34,10 +35,12 @@ func main() {
 
 	e := echo.New()
 	// 🌟 ACTIVA CORS PARA QUE ANGULAR PUEDA ENTRAR
+	origins := strings.Split(config.Config.AllowOrigins, ",")
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:4200"}, // El puerto de tu Angular
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowOrigins:     origins,
+		AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowCredentials: true,
 	}))
 	// 2. Middlewares Globales
 	e.Use(middleware.RequestLogger()) // Para ver qué pasa en la consola

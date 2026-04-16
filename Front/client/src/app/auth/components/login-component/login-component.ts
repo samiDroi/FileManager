@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { AppRoutes } from '../../../core/routes/appRoutes';
 import { FormBuilder, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,7 +16,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
-
+  errorMessage = signal<string | null>(null);
   // Formulario reactivo
   loginForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -32,16 +32,33 @@ export class LoginComponent {
     return this.loginForm.get('password') as FormControl;
   }
 
-  async onSubmit(){
-    if(this.loginForm.valid){
-      try{
-        await firstValueFrom(this.authService.login(this.loginForm.getRawValue()));
-        this.loginForm.reset();
-        this.router.navigate([AppRoutes.features.dashboard]);
-      }catch(error){
-        console.error('Error en login:', error);
-        this.loginForm.patchValue({ password: '' }); // Limpiar solo la contraseña
-      }
+  async onSubmit() {
+    // 1. Marcar todo como tocado por si intentan enviar vacío
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    // 2. Limpiar errores previos al intentar de nuevo
+    this.errorMessage.set(null);
+
+    try {
+      await firstValueFrom(this.authService.login(this.loginForm.getRawValue()));
+      this.loginForm.reset();
+      this.router.navigate([AppRoutes.features.dashboard]);
+    } catch (error: any) {
+      console.error('Error en login:', error);
+      
+      // 3. Extraer el mensaje de error del backend (HttpErrorResponse)
+      // Si el backend no manda mensaje, ponemos uno por defecto.
+      // Regla de seguridad: NUNCA especifiques si falló el usuario o la contraseña, siempre di "Usuario o contraseña incorrectos".
+      const msg = error.error?.error || 'Usuario o contraseña incorrectos. Por favor, intenta de nuevo.';
+      
+      // 4. Actualizar el signal para mostrarlo en el HTML
+      this.errorMessage.set(msg);
+      
+      // 5. Limpiar solo la contraseña
+      this.loginForm.patchValue({ password: '' });
     }
   }
   // onSignIn(): void {

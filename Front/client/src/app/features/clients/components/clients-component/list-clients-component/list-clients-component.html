@@ -8,7 +8,10 @@
       <div class="cell-main-text">{{ client.name }}</div>
     </td>
     <td>
-      <span class="status-badge active">{{ client.id }}</span>
+      <span class="status-badge active">{{ client.countProyects }}</span>
+    </td>
+     <td>
+      <span >{{ client.created_at }}</span>
     </td>
   </ng-template>
 
@@ -23,7 +26,8 @@
     <thead>
       <tr>
         <th>Nombre del Cliente</th>
-        <th>ID / Estado</th>
+        <th>No. proyectos afiliados</th>
+        <th>Fecha de alta</th>
         <th>Acciones</th>
       </tr>
     </thead>

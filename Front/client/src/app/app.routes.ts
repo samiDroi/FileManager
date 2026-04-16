@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { AppRoutes } from './core/routes/appRoutes';
 import { AuthLayout, MainLayout } from './layouts';
-import { authGuard } from './core/guards';
+import { authGuard, guestGuard } from './core/guards';
 
 
 export const routes: Routes = [
@@ -17,15 +17,17 @@ export const routes: Routes = [
            path: '',
            component: AuthLayout, 
            //grouping all auth related routes under the same layout
-           children:[
-               {
-                   path: AppRoutes.auth.login,
-                   loadComponent: () => import('./auth/components/login-component/login-component').then(m => m.LoginComponent),
-               },
-               {
-                   path: AppRoutes.auth.register,
-                   loadComponent: () => import('./auth/components/register-component/register-component').then(m => m.RegisterComponent),
-               },
+            children:[
+                {
+                    path: AppRoutes.auth.login,
+                    loadComponent: () => import('./auth/components/login-component/login-component').then(m => m.LoginComponent),
+                    canActivate: [guestGuard]
+                },
+                {
+                    path: AppRoutes.auth.register,
+                    loadComponent: () => import('./auth/components/register-component/register-component').then(m => m.RegisterComponent),
+                    canActivate: [guestGuard]
+                },
                {
                    //default route for auth, redirecting to login
                    path: '',

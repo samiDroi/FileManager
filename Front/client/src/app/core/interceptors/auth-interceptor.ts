@@ -1,16 +1,27 @@
-import { HttpInterceptorFn } from "@angular/common/http";
+import { HttpInterceptorFn, HttpErrorResponse } from "@angular/common/http";
 import { inject } from "@angular/core";
-import { LocalKeys, LocalManagerService } from "../services/local-manager-service";
+import { Router } from "@angular/router";
+import { catchError, throwError } from "rxjs";
+import { AuthStateService } from "../../auth/auth-state.service";
+import { AppRoutes } from "../routes/appRoutes";
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-    const localManagerService = inject(LocalManagerService);
-    const token = localManagerService.getElement(LocalKeys.token);  
-    let headers = req.headers;
+  const authState = inject(AuthStateService);
+  const router = inject(Router);
 
-    if(token){
-        headers = headers.set('Authorization', `Bearer ${token}`);
-    }
+  const authReq = req.clone({
+    withCredentials: true
+  });
 
-    const authReq = req.clone({ headers });
-    return next(authReq);
-}
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        if (authState.hasStoredUser()) {
+          authState.logout();
+          router.navigate([AppRoutes.auth.login]);
+        }
+      }
+      return throwError(() => error);
+    })
+  );
+};

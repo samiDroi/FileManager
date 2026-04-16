@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"server/internal/domain/models"
 	"server/internal/http/api"
+	"server/internal/http/middlewares"
 	"server/internal/paths"
 	"server/internal/services"
 	"server/internal/store/repository"
@@ -33,6 +34,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 
 	g.POST(paths.Auth.Register.Route, h.Register)
 	g.POST(paths.Auth.Login.Route, h.Login)
+	g.POST(paths.Auth.Logout.Route, h.Logout, middlewares.JWTMiddleware)
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
@@ -60,13 +62,12 @@ func (h *AuthHandler) Register(c echo.Context) error {
 
 	// Generar JWT token to login
 	token, err := createToken(c, user.ID, user.Username, user.Email)
-
+	api.SetTokenCookie(c, token)
 	//exit response with token
 	return c.JSON(http.StatusCreated, UserResponse{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
-		Token:    token,
 	})
 }
 
@@ -86,24 +87,22 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		fmt.Printf("DEBUG: Error en Scan de base de datos: %v\n", err) // <--- ESTO te dirá la verdad
 		return err
 	}
-	// if err != nil {
-	// 	return c.JSON(http.StatusUnauthorized, map[string]string{
-	// 		"error": "Credenciales inválidas: " + err.Error(),
-	// 	})
-	// }
-
-	// Generar JWT token
 
 	token, err := createToken(c, user.ID, user.Username, user.Email)
+	api.SetTokenCookie(c, token)
 	//exit response with token
 	return c.JSON(http.StatusOK, UserResponse{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
-		Token:    token,
 	})
 }
-
+func (h *AuthHandler) Logout(c echo.Context) error {
+	api.ClearCookie(c)
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Sesión cerrada correctamente",
+	})
+}
 func createToken(c echo.Context, user_ID int, username string, user_Email string) (string, error) {
 	token, err := api.GenerateToken(user_ID, username, user_Email)
 	if err != nil {
