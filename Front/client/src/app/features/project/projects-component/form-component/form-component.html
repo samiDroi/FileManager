@@ -1,0 +1,31 @@
+<div class="custom-modal-container">
+  <div class="modal-header">
+    <h2>{{ isEdit ? 'Editar Proyecto' : 'Nuevo Proyecto' }}</h2>
+    <button class="close-icon" (click)="onCancel()">×</button>
+  </div>
+  
+  <form [formGroup]="projectForm" class="modal-body">
+    <div class="input-group">
+      <label>Nombre del proyecto</label>
+      <input type="text" formControlName="name" placeholder="Ej. Proyecto Alpha">
+    </div>
+    <div class="input-group">
+      <label>Cliente</label>
+      <select formControlName="client_id">
+        <option [ngValue]="null" disabled>Seleccionar cliente</option>
+        @for (client of clients(); track client.id) {
+          <option [ngValue]="client.id">{{ client.name }}</option>
+        }
+      </select>
+    </div>
+  </form>
+
+  <div class="modal-footer">
+    <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
+    <button class="btn-save" 
+            [disabled]="projectForm.invalid" 
+            (click)="onSubmit()">
+      {{ isEdit ? 'Actualizar' : 'Guardar' }}
+    </button>
+  </div>
+</div>

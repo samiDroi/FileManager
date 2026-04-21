@@ -1,0 +1,19 @@
+<div class="header">
+  <h2>Gestión de proyectos</h2>
+  <button (click)="openCreateProjectModal()" class="btn-primary">
+    + Nuevo Proyecto
+  </button>
+</div>
+
+<div class="toolbar">
+  <app-ui-search-bar 
+    placeholder="Buscar proyectos..." 
+    (search)="onSearch($event)">
+  </app-ui-search-bar>
+</div>
+
+<app-list-projects 
+  [projectsList]="projectsList()" 
+  [isLoading]="loading()"
+  (editProject)="openEditProjectModal($event)">
+</app-list-projects>

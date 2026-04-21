@@ -4,7 +4,9 @@ import { ListClientsComponent } from './list-clients-component/list-clients-comp
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
 import { MatDialog } from '@angular/material/dialog';
 import { ClientFormComponent } from './client-form-component/client-form-component';
-import { Client } from '../../../../core';
+import { FormComponent } from '../../../project/projects-component/form-component/form-component';
+import { Client, project } from '../../../../core';
+import { projectService } from '../../../project/services/project-service';
 
 @Component({
   selector: 'app-clients-component',
@@ -17,6 +19,7 @@ export class ClientsComponent implements OnInit {
   protected clientService = inject(ClientService);
   private clientsMap = computed(() => this.clientService.state().clients);
   private dialog = inject(MatDialog);
+  private projectService = inject(projectService)
   clientsList = computed(() => Array.from(this.clientsMap().values()));
 
   loading = computed(() => this.clientService.state().loading);
@@ -53,6 +56,26 @@ export class ClientsComponent implements OnInit {
       if (updatedClient) {
         console.log('Actualizar cliente:', updatedClient);
         this.clientService.updateClient(clientToEdit.id, updatedClient);
+      }
+    });
+  }
+
+  openCreateProjectModal(client: Client): void {
+    const dialogRef = this.dialog.open(FormComponent, {
+      width: '400px',
+      data: { clientId: client.id }
+    });
+
+    dialogRef.afterClosed().subscribe(newProject => {
+      if (newProject) {
+        const projectPayload = {
+          name: newProject.name,
+          client_id: client.id
+        };
+        console.log('Crear proyecto:', projectPayload);
+        this.projectService.onCreate(projectPayload);
+        //reload to charge new projects to countprojects view inmediatly
+        this.clientService.getAllClients();
       }
     });
   }

@@ -34,25 +34,29 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 
 	g.POST(paths.Auth.Register.Route, h.Register)
 	g.POST(paths.Auth.Login.Route, h.Login)
-	g.POST(paths.Auth.Logout.Route, h.Logout, middlewares.JWTMiddleware)
+	//midlleware isAuthenticated for logout
+	g.POST(paths.Auth.Logout.Route, h.Logout, middlewares.IsAuthenticated)
+	g.POST(paths.Auth.RefreshTkn.Route, h.RefreshToken)
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
 	req := new(RegisterRequest)
 
-	//validate the request json body
+	// Validate the request json body
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "El formato de los datos es inválido",
 		})
 	}
-	//Adapt the request dto to the user model
+
+	// Adapt the request dto to the user model
 	userDto := models.User{
 		Username: req.Username,
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	//call service to register the user
+
+	// Call service to register the user
 	user, err := h.service.RegisterUser(c, userDto)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -60,10 +64,18 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
-	// Generar JWT token to login
-	token, err := createToken(c, user.ID, user.Username, user.Email)
-	api.SetTokenCookie(c, token)
-	//exit response with token
+	// Generar AMBOS tokens para auto-login
+	sessionToken, refreshToken, err := createTokens(user.ID, user.Username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Error al generar la sesión: " + err.Error(),
+		})
+	}
+
+	// Guardar las dos cookies
+	api.SetTokenCookies(c, sessionToken, refreshToken)
+
+	// Exit response
 	return c.JSON(http.StatusCreated, UserResponse{
 		ID:       user.ID,
 		Username: user.Username,
@@ -74,41 +86,89 @@ func (h *AuthHandler) Register(c echo.Context) error {
 func (h *AuthHandler) Login(c echo.Context) error {
 	req := new(LoginRequest)
 
-	//validate the request json body
+	// Validate the request json body
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "El formato de los datos es inválido",
 		})
 	}
+
 	fmt.Print(req.Username, req.Password)
-	//call service to login the user
+
+	// Call service to login the user
 	user, err := h.service.LoginUser(c, req.Username, req.Password)
 	if err != nil {
-		fmt.Printf("DEBUG: Error en Scan de base de datos: %v\n", err) // <--- ESTO te dirá la verdad
+		fmt.Printf("DEBUG: Error en Scan de base de datos: %v\n", err)
 		return err
 	}
 
-	token, err := createToken(c, user.ID, user.Username, user.Email)
-	api.SetTokenCookie(c, token)
-	//exit response with token
+	// Generar AMBOS tokens
+	sessionToken, refreshToken, err := createTokens(user.ID, user.Username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Error al generar la sesión: " + err.Error(),
+		})
+	}
+
+	// Guardar las dos cookies
+	api.SetTokenCookies(c, sessionToken, refreshToken)
+
+	// Exit response
 	return c.JSON(http.StatusOK, UserResponse{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 	})
 }
+
 func (h *AuthHandler) Logout(c echo.Context) error {
-	api.ClearCookie(c)
+	// Ahora limpia ambas cookies (session_token y refresh_token)
+	api.ClearCookies(c)
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Sesión cerrada correctamente",
 	})
 }
-func createToken(c echo.Context, user_ID int, username string, user_Email string) (string, error) {
-	token, err := api.GenerateToken(user_ID, username, user_Email)
+
+// Helper to create tokens
+func createTokens(userID int, username string) (string, string, error) {
+	sessionToken, refreshToken, err := api.GenerateTokens(userID, username)
 	if err != nil {
-		return "", c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Error al generar token: " + err.Error(),
-		})
+		return "", "", err
 	}
-	return token, err
+	return sessionToken, refreshToken, nil
+}
+
+// RefreshTokenHandler lee el refresh token, lo valida y emite nuevos tokens
+func (h *AuthHandler) RefreshToken(c echo.Context) error {
+	// 1. Leer la cookie del Refresh Token
+	cookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		// Si no hay cookie, el usuario debe iniciar sesión desde cero
+		return echo.NewHTTPError(http.StatusUnauthorized, "No se encontró el refresh token")
+	}
+
+	// 2. Validar el Refresh Token
+	// Reutilizamos tu función ValidateToken que verifica la firma y la fecha de expiración
+	claims, err := api.ValidateToken(cookie.Value)
+	if err != nil {
+		// Si el refresh token expiró (pasaron los 7 días) o es inválido
+		// Limpiamos las cookies por seguridad y forzamos el re-login
+		api.ClearCookies(c)
+		return echo.NewHTTPError(http.StatusUnauthorized, "Sesión expirada. Por favor, inicia sesión de nuevo.")
+	}
+
+	// 3. Generar nuevos tokens
+	// Usamos los datos (UserID y Username) que venían dentro del Refresh Token válido
+	newSessionToken, newRefreshToken, err := api.GenerateTokens(claims.UserID, claims.Username)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error interno al generar la sesión")
+	}
+
+	// 4. Actualizar las cookies en el navegador
+	api.SetTokenCookies(c, newSessionToken, newRefreshToken)
+
+	// 5. Devolver una respuesta de éxito
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Sesión renovada exitosamente",
+	})
 }

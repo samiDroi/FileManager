@@ -1,7 +1,7 @@
 package models
 
 import (
-	"server/internal/utils"
+	"time"
 )
 
 type ContactInfo struct {
@@ -11,10 +11,10 @@ type ContactInfo struct {
 }
 
 type Client struct {
-	ID            int              `json:"id"`
-	Name          string           `json:"name"`
-	ContactInfo   *ContactInfo     `json:"contact_info,omitempty"`
-	CountProyects *int             `json:"countProyects,omitempty"`
-	CreatedAt     utils.CustomTime `json:"created_at"`
-	UpdatedAt     utils.CustomTime `json:"updated_at"`
+	ID            int          `json:"id"`
+	Name          string       `json:"name"`
+	ContactInfo   *ContactInfo `json:"contact_info,omitempty"`
+	Countprojects *int         `json:"countprojects,omitempty"`
+	CreatedAt     time.Time    `json:"created_at"`
+	UpdatedAt     time.Time    `json:"updated_at"`
 }

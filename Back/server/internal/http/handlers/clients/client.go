@@ -30,7 +30,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewClientHandler(db)
 
 	g := e.Group(paths.Client.Prefix)
-	g.Use(middlewares.JWTMiddleware)
+	g.Use(middlewares.IsAuthenticated)
 	g.GET(paths.Client.Index.Route, h.getAll)
 	g.GET(paths.Client.Search.Route, h.SearchClientHandler)
 	g.POST(paths.Client.New.Route, h.Create)
@@ -39,7 +39,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 }
 
 func (h *ClientHandler) getAll(c echo.Context) error {
-	clients, err := h.repo.GetAllClients(c)
+	clients, err := h.repo.GetAllClients(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -53,7 +53,8 @@ func (h *ClientHandler) SearchClientHandler(c echo.Context) error {
 	clients, err := h.repo.SearchClient(ctx, param)
 
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		fmt.Println("🚨 🚨 🚨 ¡ERROR SQL DETECTADO! ->", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Fallo en BD"})
 	}
 
 	return c.JSON(http.StatusOK, clients)
@@ -84,7 +85,7 @@ func (h *ClientHandler) Create(c echo.Context) error {
 		ContactInfo: contactInfo,
 	}
 	fmt.Print(userSess)
-	createdClient, err := h.repo.CreateClient(c, newClient, userSess.UserID)
+	createdClient, err := h.repo.CreateClient(c.Request().Context(), newClient, userSess.UserID)
 	if err != nil {
 		fmt.Printf("🛑 ERROR FATAL EN BASE DE DATOS: %v\n", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error DB: "+err.Error())
@@ -126,7 +127,7 @@ func (h *ClientHandler) Edit(c echo.Context) error {
 		ContactInfo: contactInfo,
 	}
 
-	client, err := h.repo.UpdateClient(c, updatedClient, userSess.UserID)
+	client, err := h.repo.UpdateClient(c.Request().Context(), updatedClient, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error al actualizar el cliente")
 	}
@@ -148,7 +149,7 @@ func (h *ClientHandler) Delete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "ID inválido")
 	}
 
-	err = h.repo.DeleteClient(c, clientID, userSess.UserID)
+	err = h.repo.DeleteClient(c.Request().Context(), clientID, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error al eliminar el cliente")
 	}

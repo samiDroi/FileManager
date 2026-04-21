@@ -7,7 +7,7 @@ export interface Client {
   id: number;
   name: string;
   contact_info?: ContactInfo;
-  countProyects?: number;
+  countprojects?: number;
   created_at?: string;
   updated_at?: string;
 }

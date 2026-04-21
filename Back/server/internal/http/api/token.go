@@ -6,61 +6,79 @@ import (
 	"server/internal/config"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
-// Claims estructura personalizada con información del usuario
+// Claims struct personalized with user info
 type Claims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	// Email    string `json:"email"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
-// GenerarToken genera un JWT token con los datos del usuario
-func GenerateToken(userID int, username, email string) (string, error) {
-	// Verificar que tengamos SECRET_KEY configurada
+// GenerateTokens genera AMBOS tokens: Access (15m) y Refresh (7d)
+func GenerateTokens(userID int, username string) (string, string, error) {
 	if config.Config.SecretKey == "" {
-		return "", fmt.Errorf("SECRET_KEY no está configurada")
+		return "", "", fmt.Errorf("SECRET_KEY no está configurada")
 	}
 
-	// Crear los claims con la información del usuario
-	claims := &Claims{
+	secretKey := []byte(config.Config.SecretKey)
+
+	// 1. ACCESS TOKEN: 15 min token
+	accessClaims := &Claims{
 		UserID:   userID,
 		Username: username,
-		// Email:    email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), // Expira en 24 horas
-			IssuedAt:  time.Now().Unix(),
-			NotBefore: time.Now().Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-
-	// create jwt with signature HS256
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Firmar el token con la SECRET_KEY
-	secretKey := []byte(config.Config.SecretKey)
-	tokenString, err := token.SignedString(secretKey)
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(secretKey)
 	if err != nil {
-		return "", fmt.Errorf("error al firmar el token: %w", err)
+		return "", "", err
 	}
 
-	return tokenString, nil
-}
-func SetTokenCookie(c echo.Context, tokenString string) {
-	cookie := new(http.Cookie)
-	cookie.Name = "session_token"
-	cookie.Value = tokenString
-	cookie.Expires = time.Now().Add(24 * time.Hour)
-	cookie.HttpOnly = true
-	cookie.Secure = config.Config.CookieSecure
-	cookie.SameSite = http.SameSiteStrictMode
-	cookie.Path = "/"
+	// 2. REFRESH TOKEN: long duration (7 days)
+	refreshClaims := &Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(secretKey)
+	if err != nil {
+		return "", "", err
+	}
 
-	c.SetCookie(cookie)
+	return accessToken, refreshToken, nil
 }
+func SetTokenCookies(c echo.Context, accessToken, refreshToken string) {
+	// Cookie Access Token
+	c.SetCookie(&http.Cookie{
+		Name:     "session_token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(15 * time.Minute),
+		HttpOnly: true,
+		Secure:   config.Config.CookieSecure,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
+	// Cookie Refresh Token
+	c.SetCookie(&http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HttpOnly: true,
+		Secure:   config.Config.CookieSecure,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/auth/refresh", // Seguridad extra: solo se envía a la ruta de renovación
+	})
+}
+
 func GetTokenCookie(c echo.Context) (string, error) {
 	cookie, err := c.Cookie("session_token")
 	if err != nil {
@@ -68,54 +86,39 @@ func GetTokenCookie(c echo.Context) (string, error) {
 	}
 	return cookie.Value, nil
 }
-func ClearCookie(c echo.Context) {
-	cookie := new(http.Cookie)
-	cookie.Name = "session_token"
-	cookie.Value = ""
-	cookie.Expires = time.Now().Add(-1 * time.Hour)
-	cookie.Path = "/"
-	cookie.HttpOnly = true
-	cookie.Secure = config.Config.CookieSecure
-	cookie.SameSite = http.SameSiteStrictMode
 
-	c.SetCookie(cookie)
-}
-
-// ValidarToken valida un JWT token y retorna los claims si es válido
+// validate the token and return claims if the token is valid
 func ValidateToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		// Verificar el método de firma
+		//verify signature
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("método de firma inesperado: %v", token.Header["alg"])
 		}
 		return []byte(config.Config.SecretKey), nil
 	})
 
-	if err != nil {
-		return nil, fmt.Errorf("error al parsear el token: %w", err)
-	}
-
-	if !token.Valid {
-		return nil, fmt.Errorf("token inválido")
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("token inválido o expirado")
 	}
 
 	return claims, nil
 }
 
-// ObtenerTokenDesdeBearerAuth extrae el token del header Authorization
-// func GetTokenByBearerAuth(c echo.Context) (string, error) {
-// 	auth := c.Request().Header.Get("Authorization")
-// 	if auth == "" {
-// 		return "", echo.NewHTTPError(401, "token de autenticación no proporcionado")
-// 	}
-
-// 	// Validar que sea Bearer token
-// 	const bearerScheme = "Bearer "
-// 	if len(auth) < len(bearerScheme) || auth[:len(bearerScheme)] != bearerScheme {
-// 		return "", echo.NewHTTPError(401, "formato de token inválido")
-// 	}
-
-// 	return auth[len(bearerScheme):], nil
-// }
+// ClearCookies limpia ambas cookies
+func ClearCookies(c echo.Context) {
+	names := []string{"session_token", "refresh_token"}
+	for _, name := range names {
+		cookie := &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   config.Config.CookieSecure,
+			SameSite: http.SameSiteStrictMode,
+		}
+		c.SetCookie(cookie)
+	}
+}

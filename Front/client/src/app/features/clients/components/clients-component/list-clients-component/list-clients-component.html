@@ -8,7 +8,7 @@
       <div class="cell-main-text">{{ client.name }}</div>
     </td>
     <td>
-      <span class="status-badge active">{{ client.countProyects }}</span>
+      <span class="status-badge active">{{ client.countprojects }}</span>
     </td>
      <td>
       <span >{{ client.created_at }}</span>
@@ -20,13 +20,13 @@
     [data]="clients" 
     [rowTemplate]="clientRow" 
     [colSpan]="3"
-    (createItem)="onCreateItem($event)"
+    (createProject)="onCreateProject($event)"
     (editItem)="onEditItem($event)">
     
     <thead>
       <tr>
         <th>Nombre del Cliente</th>
-        <th>No. proyectos afiliados</th>
+        <th>No. projectos afiliados</th>
         <th>Fecha de alta</th>
         <th>Acciones</th>
       </tr>

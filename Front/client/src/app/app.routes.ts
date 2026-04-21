@@ -49,6 +49,10 @@ export const routes: Routes = [
             {
                 path: AppRoutes.features.clients,
                 loadComponent: () => import('./features/clients/components/clients-component/clients-component').then(m => m.ClientsComponent)
+            },
+            {
+                path:AppRoutes.features.projects,
+                loadComponent: () => import('./features/project/projects-component/projects-component').then(m => m.projectsComponent)
             }
         ]
        },

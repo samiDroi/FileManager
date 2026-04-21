@@ -5,5 +5,5 @@ type InputClient struct {
 	//optional Data
 	ContactPhone  *string `json:"contact_phone,omitempty"`
 	Email         *string `json:"email,omitempty"`
-	CountProyects *int    `json:"countProyects,omitempty"`
+	Countprojects *int    `json:"countprojects,omitempty"`
 }

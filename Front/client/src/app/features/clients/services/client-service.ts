@@ -16,7 +16,7 @@ export class ClientService {
   });
 
   getAllClients(){
-    this.http.get<Client[]>(ApiRoutes.clients.getAll).pipe(
+    this.http.get<Client[]>(ApiRoutes.clients.getAll,{withCredentials:true}).pipe(
       map(clients => new Map(clients.map(client => [client.id, client]))),
       catchError(error => {
         console.error('Error al obtener clientes:', error);

@@ -10,9 +10,9 @@
     <span class="label">Usuarios</span>
   </a>
 
-  <a routerLink="/archivos" routerLinkActive="active" class="nav-item">
+  <a [routerLink]='[routes.projects]' routerLinkActive="active" class="nav-item">
     <i class="fa fa-folder-open"></i> 
-    <span class="label">Archivos</span>
+    <span class="label">proyectos</span>
   </a>
 
   <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">

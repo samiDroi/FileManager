@@ -37,12 +37,13 @@ func (d Dynamic[T]) URLWithQuery(param T, q map[string]string) string {
 // --- STRUCT PARA RUTAS ESTÁNDAR ---
 
 type StandardResource struct {
-	Prefix string
-	Index  Static
-	New    Static
-	Edit   Dynamic[int64]
-	Delete Dynamic[int64]
-	Search Static
+	Prefix  string
+	Index   Static
+	New     Static
+	Edit    Dynamic[int64]
+	Update Dynamic[int64]
+	Delete  Dynamic[int64]
+	Search  Static
 }
 
 // --- FUNCIONES CONSTRUCTORAS ---
@@ -60,6 +61,10 @@ func NewResource(prefix string) StandardResource {
 		Index:  newStatic(prefix, ""),
 		New:    newStatic(prefix, "/new"),
 		Edit: Dynamic[int64]{
+			Route:   "/edit/:id",
+			Builder: func(id int64) string { return path.Join(prefix, "edit", fmt.Sprintf("%d", id)) },
+		},
+		Update: Dynamic[int64]{
 			Route:   "/edit/:id",
 			Builder: func(id int64) string { return path.Join(prefix, "edit", fmt.Sprintf("%d", id)) },
 		},
@@ -95,10 +100,10 @@ func buildQuery(baseURL string, query map[string]string) string {
 "/client/edit/:id"  // Edit
 "/client/:id"       // Delete
 
-"/proyect"          // Index
-"/proyect/new"      // New
-"/proyect/edit/:id" // Edit
-"/proyect/:id"      // Delete
+"/project"          // Index
+"/project/new"      // New
+"/project/edit/:id" // Edit
+"/project/:id"      // Delete
 
 "/file"             // Index
 "/file/new"         // New

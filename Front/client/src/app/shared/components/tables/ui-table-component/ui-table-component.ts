@@ -15,7 +15,7 @@ export class UiTableComponent {
   rowTemplate = input.required<TemplateRef<any>>();
   colSpan = input<number>(4);
 
-  createItem = output<any>();
+  createProject = output<any>();
   editItem = output<any>();
 
   activeMenuIndex: number | null = null;
@@ -25,9 +25,9 @@ export class UiTableComponent {
     this.activeMenuIndex = this.activeMenuIndex === index ? null : index;
   }
 
-  onCreateItem(item: any): void {
+  onCreateProject(item: any): void {
     this.activeMenuIndex = null;
-    this.createItem.emit(item);
+    this.createProject.emit(item);
   }
 
   onEditItem(item: any): void {

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, output } from '@angular/core';
-import { Client, Proyect } from '../../../../../core';
+import { Client } from '../../../../../core';
 import { UiTableComponent } from '../../../../../shared/components/tables/ui-table-component/ui-table-component';
 
 @Component({
@@ -15,10 +15,10 @@ export class ListClientsComponent {
 
   @Output() createClient = new EventEmitter<void>();
   @Output() editClient = new EventEmitter<Client>();
-  @Output() createProyect = new EventEmitter<Proyect>();
+  @Output() createproject = new EventEmitter<Client>();
 
-  onCreateItem(client: Client): void {
-    this.createClient.emit();
+  onCreateProject(client: Client): void {
+    this.createproject.emit(client);
   }
 
   onEditItem(client: Client): void {

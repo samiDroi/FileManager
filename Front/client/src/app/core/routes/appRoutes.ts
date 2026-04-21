@@ -12,7 +12,8 @@ export const AppRoutes = {
         dashboard: 'overview',
         users: 'users',
         files: 'files',
-        clients: 'clients'
+        clients: 'clients',
+        projects: 'projects'
     }
 }
 

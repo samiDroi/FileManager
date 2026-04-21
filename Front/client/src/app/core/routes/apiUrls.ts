@@ -10,7 +10,7 @@ const PREFIX = {
     users: `${BASE_URL}/users`,
     files: `${BASE_URL}/files`,
     clients: `${BASE_URL}/client`,
-    proyects: `${BASE_URL}/proyects`
+    projects: `${BASE_URL}/project`
 };
 
 // 3. Construimos el objeto exportable usando los prefijos
@@ -43,13 +43,13 @@ export const ApiRoutes = {
         delete: (id: string | number) => `${PREFIX.clients}/delete/${id}`
     },
 
-    proyects: {
-        getAll: `${PREFIX.proyects}`,
-        search: `${PREFIX.proyects}/search`,
-        create: `${PREFIX.proyects}/new`,
-        getById: (id: string | number) => `${PREFIX.proyects}/${id}`,
-        update: (id: string | number) => `${PREFIX.proyects}/edit/${id}`,
-        delete: (id: string | number) => `${PREFIX.proyects}/delete/${id}`
+    projects: {
+        getAll: `${PREFIX.projects}`,
+        search: `${PREFIX.projects}/search`,
+        create: `${PREFIX.projects}/new`,
+        getById: (id: string | number) => `${PREFIX.projects}/${id}`,
+        update: (id: string | number) => `${PREFIX.projects}/edit/${id}`,
+        delete: (id: string | number) => `${PREFIX.projects}/delete/${id}`
     }
 
 };

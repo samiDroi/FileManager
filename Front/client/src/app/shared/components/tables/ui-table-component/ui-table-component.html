@@ -14,9 +14,9 @@
 
               @if (activeMenuIndex === i) {
                 <div class="context-menu" (click)="$event.stopPropagation()">
-                  <button class="menu-item" (click)="onCreateItem(item)">
-                    <i class="fa fa-plus"></i>
-                    <span>Crear</span>
+                  <button class="menu-item" (click)="onCreateProject(item)">
+                    <i class="fa fa-folder-open"></i>
+                    <span>Crear Proyecto</span>
                   </button>
                   <button class="menu-item" (click)="onEditItem(item)">
                     <i class="fa fa-pencil"></i>
