@@ -1,13 +1,10 @@
-/* Contenedor principal del input */
 .c-input-group {
   display: flex;
   flex-direction: column;
   margin-bottom: 16px;
-  position: relative; /* Crucial para posicionar el botón del ojito */
   width: 100%;
 }
 
-/* El campo de texto en sí */
 .c-input {
   width: 100%;
   padding: 12px 16px;
@@ -20,14 +17,21 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
 }
-
-/* Estado Focus (cuando el usuario hace clic adentro) */
 .c-input:focus {
-  border-color: #3f7afc;
-  box-shadow: 0 0 0 3px rgba(63, 122, 252, 0.15);
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background: linear-gradient(#ffffff, #ffffff) padding-box,
+              linear-gradient(135deg, #00aa00, #00ff66) border-box;
+  box-shadow: 0 0 16px rgba(0, 255, 102, 0.6), 
+              0 0 8px rgba(0, 170, 0, 0.8),
+              inset 0 0 12px rgba(0, 255, 102, 0.2);
+  outline: none;
 }
+// .c-input:focus {
+//   border-color: linear-gradient(90deg, #18740c, #e6e7e7);
+//   box-shadow: 0 0 0 3px rgba(63, 122, 252, 0.15);
+// }
 
-/* Estado de Error (bordes rojos) */
 .c-input.c-input-error {
   border-color: #e53e3e;
 }
@@ -36,16 +40,19 @@
   box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
 }
 
-/* Ajuste específico para cuando es tipo password (deja espacio para el ojito) */
 .c-password-group .c-input {
-  padding-right: 48px; 
+  padding-right: 48px;
 }
 
-/* El botón transparente del ojito de la contraseña */
+.c-input-wrapper {
+  position: relative;
+}
+
 .c-password-toggle {
   position: absolute;
   right: 12px;
-  top: 12px; /* Ajusta este valor si tu input cambia de altura */
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   padding: 0;
@@ -55,13 +62,14 @@
   justify-content: center;
   color: #6a6a6a;
   transition: transform 0.1s ease;
+  width: 24px;
+  height: 24px;
 }
 
 .c-password-toggle:active {
-  transform: scale(0.9);
+  transform: translateY(-50%) scale(0.9);
 }
 
-/* Contenedor de los mensajes de error */
 .c-error-message {
   margin-top: 6px;
   color: #e53e3e;
@@ -70,7 +78,6 @@
   animation: fadeIn 0.3s ease;
 }
 
-/* Pequeña animación para que el error aparezca suavemente */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }

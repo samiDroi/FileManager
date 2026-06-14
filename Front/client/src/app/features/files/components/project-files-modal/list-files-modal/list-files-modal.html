@@ -1,0 +1,61 @@
+@if (isLoading() && files().length !== 0) {
+    <p>Cargando archivos...</p>
+}
+
+@if(files().length === 0){
+    <p>No hay archivos en este proyecto.</p>
+}@else {
+    <ng-template #fileRow let-file>
+        <td>
+            <span>{{ file.tittle }}</span>
+        </td>
+        <td>
+            <span>{{ file.project_name }}</span>
+        </td>
+        <td>
+            <span>{{ file.file_type }}</span>
+        </td>
+        <td>
+            <span>{{ file.created_at }}</span>
+        </td>
+    </ng-template>
+
+    <ng-template #contextMenu let-item let-closeMenu="close">
+        <app-edit-button 
+          [label]="'Editar'" 
+          (clicked)="onEditFile(item); closeMenu()">  
+        </app-edit-button>
+        <app-download-button 
+          [label]="'Descargar'" 
+          (clicked)="onDownloadFile(item); closeMenu()">  
+        </app-download-button>
+        <app-delete-button 
+          [label]="'Eliminar'" 
+          (clicked)="onDeleteFile(item); closeMenu()">  
+        </app-delete-button>
+    </ng-template>
+
+    <app-ui-table 
+      [data]="files()" 
+      [rowTemplate]="fileRow" 
+      [colSpan]="4"
+      [menuTemplate]="contextMenu">
+      
+      <thead>
+        <tr>
+          <th>Archivo</th>
+          <th>Proyecto</th>
+          <th>Tipo de archivo</th>
+          <th>Fecha de alta</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      
+      <div empty-state>
+        <p>No hay archivos disponibles.</p>
+      </div>
+      
+    </app-ui-table>
+
+}
+ 

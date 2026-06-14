@@ -55,6 +55,23 @@ func GenerateTokens(userID int, username string) (string, string, error) {
 
 	return accessToken, refreshToken, nil
 }
+func GenerateResetPasswordToken(userID int, currentPasswordHash string) (string, error) {
+	if config.Config.SecretKey == "" {
+		return "", fmt.Errorf("SECRET_KEY no está configurada")
+	}
+
+	secretKey := []byte(config.Config.SecretKey + currentPasswordHash)
+
+	claims := &Claims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretKey)
+}
+
 func SetTokenCookies(c echo.Context, accessToken, refreshToken string) {
 	// Cookie Access Token
 	c.SetCookie(&http.Cookie{
@@ -75,7 +92,7 @@ func SetTokenCookies(c echo.Context, accessToken, refreshToken string) {
 		HttpOnly: true,
 		Secure:   config.Config.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
-		Path:     "/auth/refresh", // Seguridad extra: solo se envía a la ruta de renovación
+		Path:     "/",
 	})
 }
 

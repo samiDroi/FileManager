@@ -1,40 +1,55 @@
-@if(isLoading){
+@if(isLoading()){
   <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
     <p>Cargando clientes...</p>
   </div>
-}@else{
-  <ng-template #clientRow let-client>
-    <td>
-      <div class="cell-main-text">{{ client.name }}</div>
-    </td>
-    <td>
-      <span class="status-badge active">{{ client.countprojects }}</span>
-    </td>
-     <td>
-      <span >{{ client.created_at }}</span>
-    </td>
-  </ng-template>
-
-
-  <app-ui-table 
-    [data]="clients" 
-    [rowTemplate]="clientRow" 
-    [colSpan]="3"
-    (createProject)="onCreateProject($event)"
-    (editItem)="onEditItem($event)">
-    
-    <thead>
-      <tr>
-        <th>Nombre del Cliente</th>
-        <th>No. projectos afiliados</th>
-        <th>Fecha de alta</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    
-    <div empty-state>
+}@else {
+  @if(clients().length === 0){
+    <div class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">
       <p>No hay clientes disponibles.</p>
     </div>
-    
-  </app-ui-table>
+  }@else {
+    <ng-template #clientRow let-client>
+      <td>
+        <div class="cell-main-text">{{ client.name }}</div>
+      </td>
+      <td>
+        <span class="status-badge active">{{ client.count_projects }}</span>
+      </td>
+       <td>
+        <span >{{ client.created_at }}</span>
+      </td>
+    </ng-template>
+
+    <ng-template #contextMenu let-item let-closeMenu="close">
+      <app-create-button 
+        [label]="'Crear Proyecto'" 
+        (clicked)="onCreateProject(item); closeMenu()">  
+      </app-create-button>
+      <app-edit-button 
+        [label]="'Editar'" 
+        (clicked)="onEditItem(item); closeMenu()">  
+      </app-edit-button>
+    </ng-template>
+
+    <app-ui-table 
+      [data]="clients()" 
+      [rowTemplate]="clientRow" 
+      [colSpan]="3"
+      [menuTemplate]="contextMenu">
+      
+      <thead>
+        <tr>
+          <th>Nombre del Cliente</th>
+          <th>No. proyectos afiliados</th>
+          <th>ID</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      
+      <div empty-state>
+        <p>No hay clientes disponibles.</p>
+      </div>
+      
+    </app-ui-table>
+  }
 }

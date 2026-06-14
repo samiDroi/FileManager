@@ -3,11 +3,13 @@ import { AppRoutes } from '../../../core/routes/appRoutes';
 import { FormBuilder, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormInput } from '../../../shared/components/inputs/form-input/form-input';
+import { ConfirmButtonComponent } from '../../../shared/components/buttons/confirm-button-component/confirm-button-component';
+import { CreateButton } from '../../../shared/components/buttons/create-button/create-button';
 import { AuthService } from '../../auth-service';
 import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-login-component',
-  imports: [FormInput,ReactiveFormsModule],
+  imports: [FormInput,ReactiveFormsModule,ConfirmButtonComponent,CreateButton],
   templateUrl: './login-component.html',
   styleUrl: './login-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,7 +84,7 @@ export class LoginComponent {
   // }
 
   onForgotPassword(): void {
-    console.log('Lógica para recuperar contraseña');
+    this.router.navigate([`${AppRoutes.auth.forgotPassword}`]);
   }
 //redirect to register page
   onCreateAccount(): void {

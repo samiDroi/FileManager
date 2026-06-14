@@ -1,8 +1,9 @@
 <div class="header">
   <h2>Gestion de clientes</h2>
-  <button (click)="openCreateClientModal()" class="btn-primary">
-    + Nuevo Cliente
-  </button>
+  <app-create-button 
+    [label]="'+ Nuevo Cliente'" 
+    (clicked)="openCreateClientModal()">  
+  </app-create-button>
 </div>
 
 <div class="toolbar">

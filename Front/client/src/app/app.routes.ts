@@ -1,7 +1,9 @@
-import { Routes } from '@angular/router';
+import { Router, Routes } from '@angular/router';
 import { AppRoutes } from './core/routes/appRoutes';
 import { AuthLayout, MainLayout } from './layouts';
 import { authGuard, guestGuard } from './core/guards';
+import { AuthStateService } from './auth/auth-state.service';
+import { inject } from '@angular/core/primitives/di';
 
 
 export const routes: Routes = [
@@ -9,6 +11,11 @@ export const routes: Routes = [
         path: '',
         redirectTo: AppRoutes.auth.login, 
         pathMatch: 'full',
+    },
+    {
+        path: AppRoutes.auth.recoveryPassword,
+        loadComponent: () => import('./auth/components/recovery-password-component/recovery-password-component').then(m => m.RecoveryPasswordComponent),
+        canActivate: [guestGuard]
     },
     //lazy loading auth module
        {
@@ -28,12 +35,22 @@ export const routes: Routes = [
                     loadComponent: () => import('./auth/components/register-component/register-component').then(m => m.RegisterComponent),
                     canActivate: [guestGuard]
                 },
+                {
+                    path: AppRoutes.auth.forgotPassword,
+                    loadComponent: () => import('./auth/components/forgot-password-component/forgot-password-component').then(m => m.ForgotPasswordComponent),
+                    canActivate: [guestGuard]
+                },
+                {
+                    path: AppRoutes.auth.resetPassword,
+                    loadComponent: () => import('./auth/components/reset-password-component/reset-password-component').then(m => m.ResetPasswordComponent),
+                    canActivate: [guestGuard]
+                },
                {
-                   //default route for auth, redirecting to login
-                   path: '',
-                   redirectTo: AppRoutes.auth.login,
-                   pathMatch: 'full'
-               }
+                    //default route for auth, redirecting to login
+                    path: '',
+                    redirectTo: AppRoutes.auth.login,
+                    pathMatch: 'full'
+                }
            ]
        },
        //lazy loading dashboard module
@@ -53,12 +70,33 @@ export const routes: Routes = [
             {
                 path:AppRoutes.features.projects,
                 loadComponent: () => import('./features/project/projects-component/projects-component').then(m => m.projectsComponent)
+            },
+            {
+                path: AppRoutes.features.users,
+                loadComponent: () => import('./features/users/components/user-component/user-component').then(m => m.UserComponent)
+            },
+            {
+                path: AppRoutes.features.files,
+                loadComponent: () => import('./features/files/components/files-component/files-component').then(m => m.FilesComponent)
             }
         ]
        },
-   
-    {
-        path: '**',
-        loadComponent: () => import('./shared/components/not-found-component/not-found-component').then(m => m.NotFoundComponent)
+   // app.routes.ts — ruta wildcard modificada
+{
+  path: '**',
+  canActivate: [() => {
+    const authState = inject(AuthStateService);
+    const router = inject(Router);
+    if (!authState.currentUser()) {
+      return router.createUrlTree([AppRoutes.auth.login]);
     }
+    return true;
+  }],
+  loadComponent: () => import('./shared/components/not-found-component/not-found-component')
+    .then(m => m.NotFoundComponent)
+}
+    // {
+    //     path: '**',
+    //     loadComponent: () => import('./shared/components/not-found-component/not-found-component').then(m => m.NotFoundComponent)
+    // }
 ]

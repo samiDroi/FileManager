@@ -6,27 +6,36 @@
       </div>
       
       <form [formGroup]="clientForm" class="modal-body">
-        <div class="input-group">
-          <label>Nombre completo</label>
-          <input type="text" formControlName="name" placeholder="Ej. Juan Pérez">
-        </div>
-         <div class="input-group">
-          <label>Telefono de contacto</label>
-          <input type="text" formControlName="contact_phone" placeholder="Ej. Juan Pérez">
-        </div>
-        <div class="input-group">
-          <label>Correo electrónico</label>
-          <input type="email" formControlName="email" placeholder="juan@correo.com">
-        </div>
+        <app-form-input 
+          type="text"
+          placeholder="Ej. Juan Pérez"
+          [control]="clientForm.get('name')!">
+        </app-form-input>
+
+        <app-form-input 
+          type="text"
+          placeholder="Ej. +1 (555) 123-4567"
+          [control]="clientForm.get('contact_phone')!">
+        </app-form-input>
+
+        <app-form-input 
+          type="email"
+          placeholder="juan@correo.com"
+          [control]="clientForm.get('email')!">
+        </app-form-input>
       </form>
 
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
-        <button class="btn-save" 
-                [disabled]="clientForm.invalid" 
-                (click)="onSubmit()">
-          {{ isEdit ? 'Actualizar' : 'Guardar' }}
-        </button>
+        <app-cancel-button 
+          [label]="'Cancelar'" 
+          (clicked)="onCancel()">  
+        </app-cancel-button>
+        <app-confirm-button 
+          [text]="isEdit ? 'Actualizar' : 'Guardar'" 
+          type="button"
+          [isDisabled]="clientForm.invalid" 
+          (clicked)="onSubmit()">  
+        </app-confirm-button>
       </div>
 
     </div>

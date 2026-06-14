@@ -1,14 +1,13 @@
 package clients
 
 import (
-	"fmt"
 	"net/http"
+	"server/internal/domain/dtos"
 	"server/internal/domain/models"
-	"server/internal/paths"
-	"strconv"
-
 	"server/internal/http/middlewares"
+	"server/internal/paths"
 	"server/internal/store/repository"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -31,34 +30,30 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 
 	g := e.Group(paths.Client.Prefix)
 	g.Use(middlewares.IsAuthenticated)
-	g.GET(paths.Client.Index.Route, h.getAll)
-	g.GET(paths.Client.Search.Route, h.SearchClientHandler)
+	g.GET(paths.Client.Index.Route, h.GetAll)
+	g.GET(paths.Client.Search.Route, h.Search)
 	g.POST(paths.Client.New.Route, h.Create)
 	g.PUT(paths.Client.Edit.Route, h.Edit)
 	g.DELETE(paths.Client.Delete.Route, h.Delete)
 }
 
-func (h *ClientHandler) getAll(c echo.Context) error {
+func (h *ClientHandler) GetAll(c echo.Context) error {
 	clients, err := h.repo.GetAllClients(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusCreated, clients)
-}
-
-func (h *ClientHandler) SearchClientHandler(c echo.Context) error {
-	param := c.QueryParam("q")
-	ctx := c.Request().Context()
-
-	clients, err := h.repo.SearchClient(ctx, param)
-
-	if err != nil {
-		fmt.Println("🚨 🚨 🚨 ¡ERROR SQL DETECTADO! ->", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Fallo en BD"})
-	}
-
 	return c.JSON(http.StatusOK, clients)
 }
+
+func (h *ClientHandler) Search(c echo.Context) error {
+	param := c.QueryParam("q")
+	clients, err := h.repo.SearchClient(c.Request().Context(), param)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Fallo en BD"})
+	}
+	return c.JSON(http.StatusOK, clients)
+}
+
 func (h *ClientHandler) Create(c echo.Context) error {
 	userSess := middlewares.GetRequestUserSession(c)
 	if !userSess.IsAuthenticated {
@@ -67,27 +62,26 @@ func (h *ClientHandler) Create(c echo.Context) error {
 		})
 	}
 
-	var input InputClient
-	if err := c.Bind(&input); err != nil {
+	var req dtos.ClientRequest
+	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Formato JSON inválido")
 	}
 
 	var contactInfo *models.ContactInfo
-	if input.Email != nil || input.ContactPhone != nil {
+	if req.Email != nil || req.ContactPhone != nil {
 		contactInfo = &models.ContactInfo{
-			Email:        input.Email,
-			ContactPhone: input.ContactPhone,
+			Email:        req.Email,
+			ContactPhone: req.ContactPhone,
 		}
 	}
 
 	newClient := models.Client{
-		Name:        input.Name,
+		Name:        req.Name,
 		ContactInfo: contactInfo,
 	}
-	fmt.Print(userSess)
+
 	createdClient, err := h.repo.CreateClient(c.Request().Context(), newClient, userSess.UserID)
 	if err != nil {
-		fmt.Printf("🛑 ERROR FATAL EN BASE DE DATOS: %v\n", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error DB: "+err.Error())
 	}
 	return c.JSON(http.StatusCreated, createdClient)
@@ -107,23 +101,23 @@ func (h *ClientHandler) Edit(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "ID inválido")
 	}
 
-	var input InputClient
-	if err := c.Bind(&input); err != nil {
+	var req dtos.ClientRequest
+	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Formato JSON inválido")
 	}
 
 	var contactInfo *models.ContactInfo
-	if input.Email != nil || input.ContactPhone != nil {
+	if req.Email != nil || req.ContactPhone != nil {
 		contactInfo = &models.ContactInfo{
 			ClientID:     clientID,
-			Email:        input.Email,
-			ContactPhone: input.ContactPhone,
+			Email:        req.Email,
+			ContactPhone: req.ContactPhone,
 		}
 	}
 
 	updatedClient := models.Client{
 		ID:          clientID,
-		Name:        input.Name,
+		Name:        req.Name,
 		ContactInfo: contactInfo,
 	}
 

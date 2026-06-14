@@ -1,6 +1,6 @@
 export interface File {
   id: number;
-  title: string;
+  tittle: string;
   path: string;
   projectId: number;
   typeId: number;

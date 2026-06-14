@@ -5,18 +5,20 @@ import { CheckPlatformUtils } from '../../utils';
 import { AuthStateService } from '../../auth/auth-state.service';
 
 export const authGuard: CanActivateChildFn = () => {
+  
+  //guard for routes that should only be accessible to logged in users
   const router = inject(Router);
-  const platformUtils = inject(CheckPlatformUtils);
+  // const platformUtils = inject(CheckPlatformUtils);
   const authState = inject(AuthStateService);
 
-  if (platformUtils.checkIfServer()) {
+  // if (platformUtils.checkIfServer()) {
+  //   return true;
+  // }
+
+  if (authState.currentUser() !== null) {
     return true;
   }
-
-  if (authState.isLoggedIn()) {
-    return true;
-  }
-
-  router.navigate([AppRoutes.auth.login]);
-  return false;
+return router.createUrlTree([AppRoutes.auth.login]);
+  // router.navigate([AppRoutes.auth.login]);
+  // return false;
 };

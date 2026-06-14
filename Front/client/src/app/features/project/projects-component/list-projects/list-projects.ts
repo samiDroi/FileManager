@@ -1,21 +1,27 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { ProjectResponse } from '../../../../core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, input } from '@angular/core';
+import { ProjectData } from '../../../../core';
 import { UiTableComponent } from '../../../../shared/components/tables/ui-table-component/ui-table-component';
+import { EditButton } from '../../../../shared/components/buttons/edit-button/edit-button';
 
 @Component({
   selector: 'app-list-projects',
-  imports: [UiTableComponent],
+  imports: [UiTableComponent, EditButton],
   templateUrl: './list-projects.html',
   styleUrl: './list-projects.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListProjects {
-  @Input({required: true}) projectsList: ProjectResponse[] = [];
-  @Input() isLoading: boolean = false;
+  projectsList = input.required<ProjectData[]>();
+  isLoading = input<boolean>(false);
 
-  @Output() editProject = new EventEmitter<ProjectResponse>();
+  @Output() editProject = new EventEmitter<ProjectData>();
+  @Output() goToFiles = new EventEmitter<ProjectData>();
 
-  onEditItem(project: ProjectResponse): void {
+  onEditItem(project: ProjectData): void {
     this.editProject.emit(project);
+  }
+
+  onGoToFiles(project: ProjectData): void {
+    this.goToFiles.emit(project);
   }
 }

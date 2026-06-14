@@ -9,6 +9,7 @@ const PREFIX = {
     auth:  `${BASE_URL}`,
     users: `${BASE_URL}/users`,
     files: `${BASE_URL}/files`,
+    typeFiles: `${BASE_URL}/type-files`,
     clients: `${BASE_URL}/client`,
     projects: `${BASE_URL}/project`
 };
@@ -19,19 +20,30 @@ export const ApiRoutes = {
         login:        `${PREFIX.auth}/login`,
         register:     `${PREFIX.auth}/register`,
         logout:       `${PREFIX.auth}/logout`,
-        refreshToken: `${PREFIX.auth}/refresh` 
+        refreshToken: `${PREFIX.auth}/refresh`,
+        forgotPassword: `${PREFIX.auth}/forgot-password`,
+        recoveryPassword:  `${PREFIX.auth}/recovery-password`
     },
     
     users: {
         getAll: `${PREFIX.users}`,
         getById: (id: string | number) => `${PREFIX.users}/${id}`,
         update:  (id: string | number) => `${PREFIX.users}/${id}`,
-        delete:  (id: string | number) => `${PREFIX.users}/${id}`
+        delete:  (id: string | number) => `${PREFIX.users}/${id}`,
+        search:  (query: string) => `${PREFIX.users}/search?query=${encodeURIComponent(query)}`
     },
 
     files: {
         upload:   `${PREFIX.files}/upload`,
-        download: (fileId: string) => `${PREFIX.files}/${fileId}/download`
+        download: (fileId: number) => `${PREFIX.files}/${fileId}/download`,
+        delete:   (fileId: number) => `${PREFIX.files}/${fileId}`,
+        getAll:   `${PREFIX.files}`,
+        getFileTypes: `${PREFIX.typeFiles}`,
+        createFileTypes: `${PREFIX.typeFiles}/new`,
+        getByProjectId: (projectId: number) => `${PREFIX.files}/project/${projectId}`,
+        getById:  (fileId: number) => `${PREFIX.files}/${fileId}`,
+        update:   (fileId: number) => `${PREFIX.files}/${fileId}`,
+        search:   (query: string) => `${PREFIX.files}/search?q=${encodeURIComponent(query)}`
     },
 
     clients:{

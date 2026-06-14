@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	apidto "server/cmd/flags/api-dto"
 	"server/internal/config"
 	"server/internal/routes"
 	"server/internal/store"
@@ -20,17 +22,33 @@ import (
 )
 
 func main() {
-	// 1. Cargar configuración y DB
 	config.Load()
+
 	runMigrate := flag.Bool("migrate", false, "Ejecuta las migraciones de Goose antes de iniciar")
+	dtoMode := flag.Bool("dto", false, "Muestra la estructura de DTOs y rutas de una feature")
+	dtoFeature := flag.String("feature", "", "Feature a inspeccionar (client, file, project, auth, type-files)")
+	dtoAll := flag.Bool("all", false, "Muestra todas las features")
 	flag.Parse()
+
+	if *dtoMode || *dtoAll || *dtoFeature != "" {
+		featureName := *dtoFeature
+		showAll := *dtoAll
+		if featureName == "" && !showAll {
+			showAll = true
+		}
+		if err := apidto.Run(featureName, showAll); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	if *runMigrate {
 		log.Println("🛠️ Ejecutando migraciones...")
 		store.RunMigrations()
 		log.Println("✅ Migraciones finalizadas.")
 	}
-	// Inicializamos la DB (esto nos devuelve el *pgxpool.Pool)
+
 	db := store.InitDB(config.Config.DBConn)
 
 	e := echo.New()

@@ -1,1 +1,12 @@
-
+<app-create-button 
+          [label]="'Subir nuevo archivo'" 
+          (clicked)="onCreateFile()">  
+        </app-create-button>
+<app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
+<app-list-files-modal 
+  [files]="allFiles()"
+  [isLoading]="isLoading()"
+  (editFile)="onEditFile($event)"
+  (downloadFile)="onDownloadFile($event)"
+  (deleteFile)="onDeleteFile($event)">
+</app-list-files-modal>

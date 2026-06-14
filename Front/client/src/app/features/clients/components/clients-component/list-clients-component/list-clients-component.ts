@@ -1,29 +1,29 @@
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, output } from '@angular/core';
-import { Client } from '../../../../../core';
+import { ChangeDetectionStrategy, Component, Output, EventEmitter, input } from '@angular/core';
+import { ClientData } from '../../../../../core/domain/dtos';
 import { UiTableComponent } from '../../../../../shared/components/tables/ui-table-component/ui-table-component';
+import { CreateButton } from '../../../../../shared/components/buttons/create-button/create-button';
+import { EditButton } from '../../../../../shared/components/buttons/edit-button/edit-button';
 
 @Component({
   selector: 'app-list-clients',
-  imports: [UiTableComponent],
+  imports: [UiTableComponent, CreateButton, EditButton],
   templateUrl: './list-clients-component.html',
   styleUrl: './list-clients-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListClientsComponent {
-  @Input({required: true}) clients: Client[] = [];
-  @Input() isLoading: boolean = false;
+  clients = input.required<ClientData[]>();
+  isLoading = input<boolean>(false);
 
   @Output() createClient = new EventEmitter<void>();
-  @Output() editClient = new EventEmitter<Client>();
-  @Output() createproject = new EventEmitter<Client>();
+  @Output() editClient = new EventEmitter<ClientData>();
+  @Output() createproject = new EventEmitter<ClientData>();
 
-  onCreateProject(client: Client): void {
+  onCreateProject(client: ClientData): void {
     this.createproject.emit(client);
   }
 
-  onEditItem(client: Client): void {
+  onEditItem(client: ClientData): void {
     this.editClient.emit(client);
   }
-
-  
 }

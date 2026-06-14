@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, Input } from '@angular/core';
-import { FormControl,ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { AbstractControl, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-form-input',
@@ -9,12 +9,14 @@ import { FormControl,ReactiveFormsModule } from '@angular/forms';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormInput {
-  // Recibimos el control del formulario desde el padre de forma estricta
-  @Input({ required: true }) control!: FormControl;
+  @Input({ required: true }) set control(value: AbstractControl) {
+    this._control = value as FormControl;
+  }
+  _control!: FormControl;
   
   // Opciones de configuración
   @Input() label: string = '';
-  @Input() type: 'text' | 'email' | 'password' = 'text';
+  @Input() type: 'text' | 'email' | 'password' | 'number' = 'text';
   @Input() placeholder: string = '';
   @Input() id: string = Math.random().toString(36).substring(2, 9); // ID único auto-generado
 

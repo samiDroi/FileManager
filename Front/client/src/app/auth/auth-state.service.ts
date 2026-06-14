@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { User } from '../core/domain/models/users';
 import { ApiRoutes } from '../core/routes/apiUrls';
+import { Observable, of } from 'rxjs';
 
 interface AuthResponse {
   id: number;
@@ -23,12 +24,30 @@ export class AuthStateService {
 
   readonly currentUser = this.userState.asReadonly();
   //if the user is logged, true, if not, false
-  readonly isLoggedIn = computed(() => this.userState() !== null);
-
+  // readonly isLoggedIn = computed(() => this.userState() !== null);
+  //Restore the user session from local storage, to manage the reload pages of the user and the session expiration
   constructor() {
+    //without this, the user will need to login to any refresh of the page
     this.initializeFromStorage();
   }
+ async verifySession(): Promise<void> {
+  if (!this.hasStoredUser()) {
+    return; // No hay datos que verificar
+  }
 
+  try {
+    const res = await fetch(ApiRoutes.auth.refreshToken, {
+      method: 'POST',
+      credentials: 'include', // envía cookies
+    });
+    if (!res.ok) {
+      this.logout(); // 401 → limpia todo
+    }
+    // Si es OK (200), no haces nada porque initializeFromStorage() ya seteó userState
+  } catch {
+    this.logout(); // Error de red (server apagado) → limpia todo
+  }
+}
   private initializeFromStorage(): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;

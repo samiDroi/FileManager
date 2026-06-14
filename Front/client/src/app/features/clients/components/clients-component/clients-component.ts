@@ -2,15 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@a
 import { ClientService } from '../../services/client-service';
 import { ListClientsComponent } from './list-clients-component/list-clients-component';
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
+import { CreateButton } from '../../../../shared/components/buttons/create-button/create-button';
 import { MatDialog } from '@angular/material/dialog';
 import { ClientFormComponent } from './client-form-component/client-form-component';
 import { FormComponent } from '../../../project/projects-component/form-component/form-component';
-import { Client, project } from '../../../../core';
+import { ClientData } from '../../../../core/domain/dtos';
 import { projectService } from '../../../project/services/project-service';
 
 @Component({
   selector: 'app-clients-component',
-  imports: [ListClientsComponent, UiSearchBarComponent],
+  imports: [ListClientsComponent, UiSearchBarComponent, CreateButton],
   templateUrl: './clients-component.html',
   styleUrl: './clients-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,13 +41,12 @@ export class ClientsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(newClient => {
       if (newClient) {
-        console.log('Crear cliente:', newClient);
         this.clientService.createClient(newClient);
       }
     });
   }
 
-  openEditClientModal(clientToEdit: Client): void {
+  openEditClientModal(clientToEdit: ClientData): void {
     const dialogRef = this.dialog.open(ClientFormComponent, {
       width: '400px',
       data: { client: clientToEdit } 
@@ -54,13 +54,12 @@ export class ClientsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(updatedClient => {
       if (updatedClient) {
-        console.log('Actualizar cliente:', updatedClient);
         this.clientService.updateClient(clientToEdit.id, updatedClient);
       }
     });
   }
 
-  openCreateProjectModal(client: Client): void {
+  openCreateProjectModal(client: ClientData): void {
     const dialogRef = this.dialog.open(FormComponent, {
       width: '400px',
       data: { clientId: client.id }
@@ -72,9 +71,7 @@ export class ClientsComponent implements OnInit {
           name: newProject.name,
           client_id: client.id
         };
-        console.log('Crear proyecto:', projectPayload);
         this.projectService.onCreate(projectPayload);
-        //reload to charge new projects to countprojects view inmediatly
         this.clientService.getAllClients();
       }
     });

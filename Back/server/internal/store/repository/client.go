@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
+	"server/internal/domain/dtos"
 	"server/internal/domain/models"
-
-	// Ya no necesitamos importar "server/internal/utils" aquí
+	"server/internal/utils"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -17,10 +18,10 @@ func NewClientRepository(db *pgxpool.Pool) *ClientRepository {
 	return &ClientRepository{db: db}
 }
 
-// ✅ Cambio: ctx context.Context en lugar de echo.Context
-func (c *ClientRepository) GetAllClients(ctx context.Context) ([]*models.Client, error) {
-	q := `SELECT c.id, c.name, c.created_at, c.updated_at, ci.email, ci.contact_phone, 
-          (SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id) as count_projects
+func (c *ClientRepository) GetAllClients(ctx context.Context) ([]dtos.ClientResponse, error) {
+	q := `SELECT c.id, c.name, ci.email, ci.contact_phone, 
+          COALESCE((SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id), 0) as count_projects,
+          c.created_at
           FROM clients c 
           LEFT JOIN "contact_info" ci ON c.id = ci.client_id`
 
@@ -30,38 +31,60 @@ func (c *ClientRepository) GetAllClients(ctx context.Context) ([]*models.Client,
 	}
 	defer rows.Close()
 
-	clients := make([]*models.Client, 0)
+	var clients []dtos.ClientResponse
 	for rows.Next() {
-		var client models.Client
-		var email, phone *string
-
-		// ✅ Escaneo directo, sin variables temporales de fecha
-		if err := rows.Scan(
-			&client.ID,
-			&client.Name,
-			&client.CreatedAt,
-			&client.UpdatedAt,
-			&email,
-			&phone,
-			&client.Countprojects,
-		); err != nil {
+		var client dtos.ClientResponse
+		var createdAt time.Time
+		if err := rows.Scan(&client.ID, &client.Name, &client.Email, &client.ContactPhone, &client.CountProjects, &createdAt); err != nil {
 			return nil, err
 		}
-
-		if email != nil || phone != nil {
-			client.ContactInfo = &models.ContactInfo{
-				ClientID:     client.ID,
-				Email:        email,
-				ContactPhone: phone,
-			}
-		}
-		clients = append(clients, &client)
+		client.CreatedAt = utils.ToCustomTime(createdAt)
+		clients = append(clients, client)
 	}
 	return clients, nil
 }
 
-// ✅ Cambio: ctx context.Context
-func (c *ClientRepository) CreateClient(ctx context.Context, client models.Client, userID int) (*models.Client, error) {
+func (c *ClientRepository) SearchClient(ctx context.Context, searchParam string) ([]dtos.ClientResponse, error) {
+	if searchParam == "" {
+		return []dtos.ClientResponse{}, nil
+	}
+
+	searchPattern := "%" + searchParam + "%"
+
+	query := `
+        SELECT c.id, c.name, ci.email, ci.contact_phone, 
+               COALESCE((SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id), 0) as count_projects,
+               c.created_at
+        FROM clients c 
+        LEFT JOIN "contact_info" ci ON c.id = ci.client_id
+        WHERE c.name ILIKE $1
+    `
+
+	rows, err := c.db.Query(ctx, query, searchPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clients []dtos.ClientResponse
+	for rows.Next() {
+		var client dtos.ClientResponse
+		var createdAt time.Time
+		if err := rows.Scan(&client.ID, &client.Name, &client.Email, &client.ContactPhone, &client.CountProjects, &createdAt); err != nil {
+			return nil, err
+		}
+		client.CreatedAt = utils.ToCustomTime(createdAt)
+		clients = append(clients, client)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return clients, nil
+}
+
+func (c *ClientRepository) CreateClient(ctx context.Context, client models.Client, userID int) (*dtos.ClientResponse, error) {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -69,7 +92,8 @@ func (c *ClientRepository) CreateClient(ctx context.Context, client models.Clien
 	defer tx.Rollback(ctx)
 
 	q := `INSERT INTO clients(name, created_by, updated_by) VALUES ($1, $2, $3) RETURNING id`
-	err = tx.QueryRow(ctx, q, client.Name, userID, userID).Scan(&client.ID)
+	var clientID int
+	err = tx.QueryRow(ctx, q, client.Name, userID, userID).Scan(&clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +101,7 @@ func (c *ClientRepository) CreateClient(ctx context.Context, client models.Clien
 	if client.ContactInfo != nil {
 		contactQ := `INSERT INTO "contact_info"(client_id, email, contact_phone, created_by, updated_by) 
                      VALUES ($1, $2, $3, $4, $5)`
-		_, err = tx.Exec(ctx, contactQ, client.ID, client.ContactInfo.Email, client.ContactInfo.ContactPhone, userID, userID)
+		_, err = tx.Exec(ctx, contactQ, clientID, client.ContactInfo.Email, client.ContactInfo.ContactPhone, userID, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -87,19 +111,18 @@ func (c *ClientRepository) CreateClient(ctx context.Context, client models.Clien
 		return nil, err
 	}
 
-	return c.GetClientByID(ctx, client.ID)
+	return c.GetClientByID(ctx, clientID)
 }
 
-// ✅ Cambio: ctx context.Context
-func (c *ClientRepository) UpdateClient(ctx context.Context, client models.Client, userID int) (*models.Client, error) {
+func (c *ClientRepository) UpdateClient(ctx context.Context, client models.Client, userID int) (*dtos.ClientResponse, error) {
 	tx, err := c.db.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
 
-	q := `UPDATE clients SET name = $1, updated_by = $2 WHERE id = $3 RETURNING id`
-	err = tx.QueryRow(ctx, q, client.Name, userID, client.ID).Scan(&client.ID)
+	q := `UPDATE clients SET name = $1, updated_by = $2 WHERE id = $3`
+	_, err = tx.Exec(ctx, q, client.Name, userID, client.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +147,8 @@ func (c *ClientRepository) UpdateClient(ctx context.Context, client models.Clien
 	return c.GetClientByID(ctx, client.ID)
 }
 
-// ✅ Cambio: ctx context.Context
 func (c *ClientRepository) DeleteClient(ctx context.Context, clientID int64, userID int) error {
 	q := `DELETE FROM clients WHERE id = $1`
-
 	_, err := c.db.Exec(ctx, q, clientID)
 	if err != nil {
 		return err
@@ -135,96 +156,27 @@ func (c *ClientRepository) DeleteClient(ctx context.Context, clientID int64, use
 	return nil
 }
 
-// Este ya estaba bien
-func (c *ClientRepository) SearchClient(ctx context.Context, searchParam string) ([]models.Client, error) {
-	results := make([]models.Client, 0)
-
-	if searchParam == "" {
-		return results, nil
-	}
-
-	searchPattern := "%" + searchParam + "%"
-
-	query := `
-        SELECT c.id, c.name, c.created_at, c.updated_at, ci.email, ci.contact_phone, 
-               (SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id) as count_projects
-        FROM clients c 
-        LEFT JOIN "contact_info" ci ON c.id = ci.client_id
-        WHERE c.name ILIKE $1
-    `
-
-	rows, err := c.db.Query(ctx, query, searchPattern)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var client models.Client
-		var email, phone *string
-
-		if err := rows.Scan(
-			&client.ID,
-			&client.Name,
-			&client.CreatedAt,
-			&client.UpdatedAt,
-			&email,
-			&phone,
-			&client.Countprojects,
-		); err != nil {
-			return nil, err
-		}
-
-		if email != nil || phone != nil {
-			client.ContactInfo = &models.ContactInfo{
-				ClientID:     client.ID,
-				Email:        email,
-				ContactPhone: phone,
-			}
-		}
-
-		results = append(results, client)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
-// ✅ Cambio: ctx context.Context y limpieza del scan
-func (c *ClientRepository) GetClientByID(ctx context.Context, clientID int) (*models.Client, error) {
-	q := `SELECT c.id, c.name, c.created_at, c.updated_at, ci.email, ci.contact_phone, 
-          (SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id) as count_projects
+func (c *ClientRepository) GetClientByID(ctx context.Context, clientID int) (*dtos.ClientResponse, error) {
+	q := `SELECT c.id, c.name, ci.email, ci.contact_phone, 
+          COALESCE((SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id), 0) as count_projects,
+          c.created_at
           FROM clients c 
           LEFT JOIN "contact_info" ci ON c.id = ci.client_id
           WHERE c.id = $1`
 
-	var client models.Client
-	var email, phone *string
-
-	// ✅ Escaneo directo al struct
+	var client dtos.ClientResponse
+	var createdAt time.Time
 	err := c.db.QueryRow(ctx, q, clientID).Scan(
 		&client.ID,
 		&client.Name,
-		&client.CreatedAt,
-		&client.UpdatedAt,
-		&email,
-		&phone,
-		&client.Countprojects,
+		&client.Email,
+		&client.ContactPhone,
+		&client.CountProjects,
+		&createdAt,
 	)
+	client.CreatedAt = utils.ToCustomTime(createdAt)
 	if err != nil {
 		return nil, err
 	}
-
-	if email != nil || phone != nil {
-		client.ContactInfo = &models.ContactInfo{
-			ClientID:     client.ID,
-			Email:        email,
-			ContactPhone: phone,
-		}
-	}
-
 	return &client, nil
 }

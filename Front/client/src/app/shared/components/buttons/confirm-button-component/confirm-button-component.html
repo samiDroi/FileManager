@@ -1,23 +1,25 @@
-<button 
-  [type]="type"
-  class="custom-btn"
-  [class]="'btn-' + variant"
-  [disabled]="isDisabled || isLoading"
-  (click)="onButtonClick()"
->
-  
-  @if (isLoading) {
-    <div class="loader-container">
-      <div class="spinner"></div>
-      <span class="loading-text">Cargando...</span>
-    </div>
-  } @else {
-    @if (icon) {
-      <i [class]="icon" class="btn-icon"></i>
+<div class="button-container">
+  <button 
+    [type]="type"
+    class="custom-btn"
+    [class]="'btn-' + variant"
+    [disabled]="isDisabled || isLoading"
+    (click)="onButtonClick()"
+  >
+    
+    @if (isLoading) {
+      <div class="loader-container">
+        <div class="spinner"></div>
+        <span class="loading-text">Cargando...</span>
+      </div>
+    } @else {
+      @if (icon) {
+        <i [class]="icon" class="btn-icon"></i>
+      }
+      <span class="btn-text">
+        {{ text }}
+      </span>
     }
-    <span class="btn-text">
-      {{ text }}
-    </span>
-  }
 
-</button>
+  </button>
+</div>

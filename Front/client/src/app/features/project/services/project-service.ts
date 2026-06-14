@@ -1,19 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
-import { project,ProjectResponse } from '../../../core';
-import { projectCreated } from '../../../core/domain/dtos';
-export interface ProjectPayload {
-  name: string;
-  client_id: number;
-}
-
-// export interface ProjectResponse {
-//   id: number;
-//   name: string;
-//   count_files: number;
-//   created_at: string;
-// }
+import { ProjectData, ProjectRequest } from '../../../core/domain/dtos';
 
 @Injectable({
   providedIn: 'root',
@@ -21,13 +9,13 @@ export interface ProjectPayload {
 export class projectService {
   private http = inject(HttpClient)
   public state = signal({
-    projects: new Map<number, ProjectResponse>(),
+    projects: new Map<number, ProjectData>(),
     loading: false
   })
 
   getAll(){
     this.state.set({...this.state(),loading: true});
-    this.http.get< ProjectResponse []>(ApiRoutes.projects.getAll).subscribe({
+    this.http.get< ProjectData []>(ApiRoutes.projects.getAll).subscribe({
       next: (getProjects) =>{
         const newMap = new Map(this.state().projects);
         getProjects.forEach(p => newMap.set(p.id,p))
@@ -45,8 +33,8 @@ export class projectService {
     })
   }
 
-  onCreate(newProject: projectCreated){
-    this.http.post<ProjectResponse>(ApiRoutes.projects.create,newProject).subscribe({
+  onCreate(newProject: ProjectRequest){
+    this.http.post<ProjectData>(ApiRoutes.projects.create,newProject).subscribe({
       next: (createdProject) => {
         this.state.update(s => {
           const createdMap = new Map(s.projects); 
@@ -57,13 +45,12 @@ export class projectService {
             loading: false
           };
         });
-
       }
     })
   }
 
-  onUpdate(id: number, updatedProject: any){
-    this.http.put<ProjectResponse>(ApiRoutes.projects.update(id),updatedProject).subscribe({
+  onUpdate(id: number, updatedProject: ProjectRequest){
+    this.http.put<ProjectData>(ApiRoutes.projects.update(id),updatedProject).subscribe({
       next: (updated) => {
         this.state.update(s => {
           const updatedMap = new Map(s.projects);
@@ -90,10 +77,12 @@ export class projectService {
 
     const params = new HttpParams().set('q', query);
 
-    this.http.get<ProjectResponse[]>(ApiRoutes.projects.search, { params }).subscribe({
+    this.http.get<ProjectData[]>(ApiRoutes.projects.search, { params }).subscribe({
       next: (projects) => {
-        const newMap = new Map<number, ProjectResponse>();
-        projects.forEach(p => newMap.set(p.id, p));
+        const newMap = new Map<number, ProjectData>();
+        if (projects) {
+          projects.forEach(p => newMap.set(p.id, p));
+        }
         this.state.update(s => ({
           ...s,
           projects: newMap,

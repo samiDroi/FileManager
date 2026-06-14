@@ -1,0 +1,43 @@
+
+<app-ui-table
+  [data]="usersList()"
+  [rowTemplate]="userRow"
+  [colSpan]="5"
+  [menuTemplate]="contextMenu"
+>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Created By</th>
+      <th>Updated By</th>
+      <th>Uploaded Files</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <div empty-state>
+    <p>No hay usuarios disponibles.</p>
+  </div>
+</app-ui-table>
+
+<ng-template #userRow let-user>
+  <td>{{ user.username }}</td>
+  <td>{{ user.email }}</td>
+  <td>{{ user.createdBy }}</td>
+  <td>{{ user.updatedBy }}</td>
+  <td>{{ user.uploadedFiles }}</td>
+</ng-template>
+ <ng-template #contextMenu let-item let-closeMenu="close">
+        <app-edit-button 
+          [label]="'Editar'" 
+          (clicked)="onEdit(item); closeMenu()">  
+        </app-edit-button>
+        <app-delete-button 
+          [label]="'Eliminar'" 
+          (clicked)="onDelete(item); closeMenu()">  
+        </app-delete-button>
+    </ng-template>
+<!-- <ng-template #contextMenu let-user>
+  <button (click)="onEdit(user)">Edit</button>
+  <button (click)="onDelete(user)">Delete</button>
+</ng-template> -->

@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormInput } from '../../../../../shared/components/inputs/form-input/form-input';
+import { CancelButton } from '../../../../../shared/components/buttons/cancel-button/cancel-button';
+import { ConfirmButtonComponent } from '../../../../../shared/components/buttons/confirm-button-component/confirm-button-component';
 
 @Component({
   selector: 'app-client-form-component',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormInput, CancelButton, ConfirmButtonComponent],
   templateUrl: './client-form-component.html',
   styleUrl: './client-form-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,8 +20,8 @@ export class ClientFormComponent implements OnInit {
 
   clientForm = this.fb.group({
     name: [this.data?.client?.name || '', Validators.required],
-    email: [this.data?.client?.contact_info?.email || ''],
-    contact_phone: [this.data?.client?.contact_info?.contact_phone || '']
+    email: [this.data?.client?.email || '', Validators.email],
+    contact_phone: [this.data?.client?.contact_phone || '']
   })
 
   ngOnInit(): void {
@@ -29,8 +29,8 @@ export class ClientFormComponent implements OnInit {
       this.isEdit = true
       this.clientForm.patchValue({
         name: this.data.client.name,
-        email: this.data.client.contact_info?.email || '',
-        contact_phone: this.data.client.contact_info?.contact_phone || ''
+        email: this.data.client.email || '',
+        contact_phone: this.data.client.contact_phone || ''
       })
     }
   }
@@ -44,7 +44,7 @@ export class ClientFormComponent implements OnInit {
       const formName = this.clientForm.get('name')?.value || '';
       const formEmail = this.clientForm.get('email')?.value || null;
       const formPhone = this.clientForm.get('contact_phone')?.value || null;
-      //payload: important data to send to the database
+      
       const payload: any = { name: formName }
 
       if (formEmail) payload.email = formEmail;

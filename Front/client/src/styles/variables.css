@@ -10,4 +10,9 @@
     --color-bg-main: #ecf0f1;
     --color-bg-secondary: #bdc3c7;
     --color-bg-danger: #e74c3c;
+
+    /*auth card colors*/
+    --primary-dark-green: #1d5c3b;
+    --primary-light-green: #63aa28;
+    --auth-bg: #f0f2f5;
 }

@@ -1,40 +1,57 @@
-<div class="c-signin-container">
+<div class="c-signin-wrapper">
   
-  <header class="c-signin-header">
-    <img src="https://img.logo.dev/logos/column.com?token=pk_logo_r4k_z1h_j7b_l0n_c6m_y8j" alt="Company Logo" class="c-logo">
-    <h1 class="c-title">Sign in</h1>
-  </header>
-  @if (errorMessage()) {
-    <div class="error-alert" role="alert">
-      {{ errorMessage() }}
-    </div>
-  }
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="c-form">
+  <!-- Left side: Image -->
+  <div class="c-signin-image">
+    <img src="https://img.logo.dev/logos/column.com?token=pk_logo_r4k_z1h_j7b_l0n_c6m_y8j" alt="Login Banner" class="c-banner-image">
+  </div>
+
+  <!-- Right side: Form -->
+  <div class="c-signin-container">
     
-    <app-form-input 
-      type="text"
-      placeholder="Username"
-      [control]="usernameControl">
-    </app-form-input>
+    <header class="c-signin-header">
+      <h1 class="c-title">Sign in</h1>
+    </header>
 
-    <app-form-input 
-      type="password"
-      placeholder="Password"
-      [control]="passwordControl">
-    </app-form-input>
+    @if (errorMessage()) {
+      <div class="error-alert" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
 
-    <button type="submit" class="c-button-primary" [disabled]="loginForm.invalid">
-      Sign in
-    </button>
-  </form>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="c-form">
+      
+      <app-form-input 
+        type="text"
+        placeholder="Username"
+        [control]="usernameControl">
+      </app-form-input>
 
-  <div class="c-actions">
-    <button type="button" (click)="onForgotPassword()" class="c-link">Forgot your password?</button>
-    
-    <div class="c-no-account-divider">
-      <p class="c-text-muted">Don't have a Column account?</p>
-      <button type="button" (click)="onCreateAccount()" class="c-button-secondary">Create new account</button>
+      <app-form-input 
+        type="password"
+        placeholder="Password"
+        [control]="passwordControl">
+      </app-form-input>
+
+      <app-confirm-button 
+        text="Sign in" 
+        type="submit"
+        [isDisabled]="loginForm.invalid"
+        (clicked)="onSubmit()">
+      </app-confirm-button>
+    </form>
+
+    <div class="c-actions">
+      <button type="button" (click)="onForgotPassword()" class="c-link">Forgot your password?</button>
+      
+      <div class="c-no-account-divider">
+        <p class="c-text-muted">Don't have a Column account?</p>
+        <app-create-button 
+          [label]="'Create new account'" 
+          (clicked)="onCreateAccount()">
+        </app-create-button>
+      </div>
     </div>
+
   </div>
 
 </div>

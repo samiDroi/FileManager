@@ -3,6 +3,7 @@ package projects
 import (
 	"fmt"
 	"net/http"
+	"server/internal/domain/dtos"
 	"server/internal/domain/models"
 	"server/internal/http/middlewares"
 	"server/internal/paths"
@@ -25,6 +26,7 @@ func NewProjectHandler(db *pgxpool.Pool) *projectHandler {
 		repo: repository.NewProjectRepository(db),
 	}
 }
+
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewProjectHandler(db)
 	g := e.Group(paths.Project.Prefix, middlewares.IsAuthenticated)
@@ -34,51 +36,32 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	g.PUT(paths.Project.Update.Route, h.Update)
 }
 
-func (p *projectHandler) GetAll(c echo.Context) error {
-	projects, err := p.repo.GetAllProjects(c.Request().Context())
-	fmt.Print(projects)
+func (h *projectHandler) GetAll(c echo.Context) error {
+	projects, err := h.repo.GetAllProjects(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	response := make([]projectResponse, len(projects))
-	for i, project := range projects {
-		response[i] = mapProjectToDtoToResponse(project)
-	}
-	return c.JSON(http.StatusCreated, response)
+	return c.JSON(http.StatusOK, projects)
 }
-func (p *projectHandler) Search(c echo.Context) error {
+
+func (h *projectHandler) Search(c echo.Context) error {
 	param := c.QueryParam("q")
-	ctx := c.Request().Context()
-
-	projects, err := p.repo.Search(ctx, param)
-
+	projects, err := h.repo.Search(c.Request().Context(), param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	response := make([]projectResponse, len(projects))
-	for i, project := range projects {
-		response[i] = mapProjectToDtoToResponse(project)
-	}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, projects)
 }
+
 func (h *projectHandler) Create(c echo.Context) error {
-	var req projectRequest
+	var req dtos.ProjectRequest
 	userSess := middlewares.GetRequestUserSession(c)
 
-	c.Logger().Info("=== CREATE PROJECT DEBUG ===")
-	c.Logger().Info("userSess.UserID: ", userSess.UserID)
-	c.Logger().Info("userSess.IsAuthenticated: ", userSess.IsAuthenticated)
-
 	if err := c.Bind(&req); err != nil {
-		c.Logger().Error("Bind error: ", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "El formato de los datos es incorrecto",
 		})
 	}
-
-	c.Logger().Info("req.Name: ", req.Name)
-	c.Logger().Info("req.ClientID: ", req.ClientID)
 
 	projectModel := models.Project{
 		Name:     req.Name,
@@ -87,32 +70,34 @@ func (h *projectHandler) Create(c echo.Context) error {
 
 	createdProject, err := h.repo.CreateProject(c.Request().Context(), &projectModel, userSess.UserID)
 	if err != nil {
-		c.Logger().Error("Error creando proyecto: ", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Ocurrió un error al guardar el proyecto",
 		})
 	}
 
-	initialFiles := 0
-
 	clientName, _ := h.repo.GetClientName(c.Request().Context(), createdProject.ClientID)
 
-	response := projectResponse{
+	initialFiles := 0
+	response := dtos.ProjectResponse{
 		ID:         createdProject.ID,
 		Name:       createdProject.Name,
-		ClientId:   createdProject.ClientID,
+		ClientID:   createdProject.ClientID,
 		ClientName: clientName,
 		CountFiles: &initialFiles,
-		CreatedAt:  utils.CustomTime{Time: createdProject.CreatedAt},
+		CreatedAt:  utils.ToCustomTime(createdProject.CreatedAt),
 	}
 
 	return c.JSON(http.StatusCreated, response)
 }
+
 func (h *projectHandler) Update(c echo.Context) error {
 	idParam := c.Param("id")
-	projectID, _ := strconv.Atoi(idParam)
+	projectID, err := strconv.Atoi(idParam)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "invalid project ID"})
+	}
 
-	var req projectRequest
+	var req dtos.ProjectRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{
 			"error": fmt.Sprintf("datos inválidos: %v", err),
@@ -124,7 +109,7 @@ func (h *projectHandler) Update(c echo.Context) error {
 		ClientID: req.ClientID,
 	}
 
-	err := h.repo.UpdateProject(c.Request().Context(), &projectModel, projectID)
+	err = h.repo.UpdateProject(c.Request().Context(), &projectModel, projectID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": "error en DB"})
 	}
@@ -134,18 +119,5 @@ func (h *projectHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"message": "Actualizado (pero no pude recargar datos)"})
 	}
 
-	response := mapProjectToDtoToResponse(updatedData)
-
-	return c.JSON(http.StatusOK, response)
-}
-
-func mapProjectToDtoToResponse(project *models.ProjectToDto) projectResponse {
-	return projectResponse{
-		ID:         project.ID,
-		Name:       project.Name,
-		ClientId:   project.ClientID,
-		ClientName: project.ClientName,
-		CountFiles: project.CountFiles,
-		CreatedAt:  utils.CustomTime{Time: project.CreatedAt},
-	}
+	return c.JSON(http.StatusOK, updatedData)
 }

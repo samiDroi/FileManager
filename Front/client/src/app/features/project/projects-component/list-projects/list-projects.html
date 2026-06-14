@@ -1,42 +1,64 @@
-@if(isLoading){
+@if(isLoading()){
   <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
     <p>Cargando proyectos...</p>
   </div>
-}@else{
-  <ng-template #projectRow let-project>
-    <td>
-      <div class="cell-main-text">{{ project.name }}</div>
-    </td>
-    <td>
-      <span class="status-badge">{{ project.client_name }}</span>
-    </td>
-    <td>
-      <span class="status-badge active">{{ project.count_files }}</span>
-    </td>
-    <td>
-      <span>{{ project.created_at }}</span>
-    </td>
-  </ng-template>
-
-  <app-ui-table 
-    [data]="projectsList" 
-    [rowTemplate]="projectRow" 
-    [colSpan]="5"
-    (editItem)="onEditItem($event)">
-    
-    <thead>
-      <tr>
-        <th>Nombre del Proyecto</th>
-        <th>Cliente</th>
-        <th>No. archivos</th>
-        <th>Fecha de alta</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    
-    <div empty-state>
+}@else {
+  @if(projectsList().length === 0){
+    <div class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">
       <p>No hay proyectos disponibles.</p>
     </div>
-    
-  </app-ui-table>
+  }@else {
+    <ng-template #projectRow let-project>
+      <td>
+        <div class="cell-main-text">{{ project.name }}</div>
+      </td>
+      <td>
+        <span class="status-badge">{{ project.client_name }}</span>
+      </td>
+      <td>
+        <span class="status-badge active">{{ project.count_files }}</span>
+      </td>
+      <td>
+        <span>{{ project.created_at }}</span>
+      </td>
+    </ng-template>
+
+    <ng-template #contextMenu let-item let-closeMenu="close">
+      <!-- <button class="menu-item" (click)="onGoToFiles(item); closeMenu()">
+        <i class="fa fa-file"></i>
+        <span>Ir a archivos</span>
+      </button> -->
+      <button class="btn btn-list" (click)="onGoToFiles(item); closeMenu()">
+        <i class="fas fa-clipboard-list"></i>
+        Ver Archivos
+        <span class="badge">{{item.count_files }}</span> 
+      </button>
+      <app-edit-button 
+        [label]="'Editar'" 
+        (clicked)="onEditItem(item); closeMenu()">  
+      </app-edit-button>
+    </ng-template>
+
+    <app-ui-table 
+      [data]="projectsList()" 
+      [rowTemplate]="projectRow" 
+      [colSpan]="5"
+      [menuTemplate]="contextMenu">
+      
+      <thead>
+        <tr>
+          <th>Nombre del Proyecto</th>
+          <th>Cliente</th>
+          <th>No. archivos</th>
+          <th>Fecha de alta</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      
+      <div empty-state>
+        <p>No hay proyectos disponibles.</p>
+      </div>
+      
+    </app-ui-table>
+  }
 }

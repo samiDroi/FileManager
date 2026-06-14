@@ -4,7 +4,7 @@ import "time"
 
 type File struct {
 	ID        int    `json:"id"`
-	Title     string `json:"title"`
+	tittle    string `json:"tittle"`
 	Path      string `json:"path"`
 	ProjectID int    `json:"project_id"`
 	TypeID    int    `json:"type_id"`
@@ -14,9 +14,9 @@ type File struct {
 }
 
 type FilesToDto struct {
-	File         File
-	ProjectName  string
-	ProjectID  int
-	CreatedAt  time.Time
-	FileType   string
+	File        File
+	ProjectName string
+	ProjectID   int
+	CreatedAt   time.Time
+	FileType    string
 }

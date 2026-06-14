@@ -1,0 +1,43 @@
+<div class="type-form-overlay">
+  <div class="type-form-container">
+    <h3>Crear Tipos de Archivo</h3>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      
+      <div formArrayName="items">
+        @for (formGroup of items(); track formGroup.controls.id.value; let index = $index) {
+          <div [formGroupName]="index" class="type-row">
+            <app-form-input 
+              type="text"
+              placeholder="Nombre del tipo"
+              [control]="formGroup.get('name')!">
+            </app-form-input>
+            <app-delete-button 
+              [label]="''" 
+              (clicked)="removeItem(index)">  
+            </app-delete-button>
+          </div>
+        }
+      </div>
+
+      <div class="type-actions">
+        <app-create-button 
+          [label]="'Agregar tipo'" 
+          (clicked)="addItem()">  
+        </app-create-button>
+      </div>
+
+      <div class="type-form-buttons">
+        <app-cancel-button 
+          [label]="'Cancelar'" 
+          (clicked)="onCancel.emit()">  
+        </app-cancel-button>
+        <app-confirm-button 
+          text="Crear Tipos" 
+          type="submit"
+          (clicked)="onSubmit()">  
+        </app-confirm-button>
+      </div>
+    </form>
+  </div>
+</div>

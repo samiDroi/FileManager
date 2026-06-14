@@ -3,12 +3,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from './form-component/form-component';
 import { ListProjects } from './list-projects/list-projects';
 import { UiSearchBarComponent } from '../../../shared/components/search-bar/ui-search-bar-component';
+import { CreateButton } from '../../../shared/components/buttons/create-button/create-button';
 import { projectService } from '../services';
-import { ProjectResponse } from '../../../core';
+import { ProjectData } from '../../../core';
+import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
 
 @Component({
   selector: 'app-projects-component',
-  imports: [ListProjects, UiSearchBarComponent],
+  imports: [ListProjects, UiSearchBarComponent, CreateButton],
   templateUrl: './projects-component.html',
   styleUrl: './projects-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,7 +48,7 @@ export class projectsComponent implements OnInit {
     });
   }
 
-  openEditProjectModal(project: ProjectResponse): void {
+  openEditProjectModal(project: ProjectData): void {
     const dialogRef = this.modal.open(FormComponent, {
       width: '500px',
       data: { project: project }
@@ -58,6 +60,14 @@ export class projectsComponent implements OnInit {
         this.projectService.onUpdate(updatedProject.id, updatedProject);
         this.projectService.getAll();
       }
+    });
+  }
+
+  openFilesModal(project: ProjectData): void {
+    this.modal.open(ProjectFilesModalComponent, {
+      width: '850px',
+      maxWidth: '95vw',
+      data: { project: project }
     });
   }
 }

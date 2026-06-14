@@ -1,6 +1,6 @@
 
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostListener, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, input } from '@angular/core';
 import { TemplateRef } from '@angular/core';
 
 @Component({
@@ -12,27 +12,18 @@ import { TemplateRef } from '@angular/core';
 })
 export class UiTableComponent {
   data = input<any[]>([]);
+  //template for each row
   rowTemplate = input.required<TemplateRef<any>>();
   colSpan = input<number>(4);
 
-  createProject = output<any>();
-  editItem = output<any>();
-
+  menuTemplate = input<TemplateRef<any>>();
+  closeMenuFn = () => { this.activeMenuIndex = null; }
+  //row from ctable that triggers the action (menu)
   activeMenuIndex: number | null = null;
 
   toggleMenu(index: number, event: Event): void {
     event.stopPropagation();
     this.activeMenuIndex = this.activeMenuIndex === index ? null : index;
-  }
-
-  onCreateProject(item: any): void {
-    this.activeMenuIndex = null;
-    this.createProject.emit(item);
-  }
-
-  onEditItem(item: any): void {
-    this.activeMenuIndex = null;
-    this.editItem.emit(item);
   }
 
   @HostListener('document:click')

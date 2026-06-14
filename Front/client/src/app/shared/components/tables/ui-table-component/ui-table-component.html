@@ -1,5 +1,6 @@
 <div class="table-container">
   <table class="modern-table">
+    <!-- select thead render the thead from the parent component, if it exists, otherwise render nothing, select works the same way as css selectors, so it will look for the thead element in the parent component and render it here, if it doesn't find it, it will render nothing -->
     <ng-content select="thead"></ng-content>
 
     <tbody>
@@ -7,24 +8,20 @@
         <tr>
           <ng-container *ngTemplateOutlet="rowTemplate(); context: { $implicit: item, $index: i }"></ng-container>
           <td class="actions-cell">
-            <div class="actions-wrapper">
-              <button class="menu-trigger" (click)="toggleMenu(i, $event)">
-                <i class="fa fa-ellipsis-h"></i>
-              </button>
+            @if (menuTemplate()) {
+              <div class="actions-wrapper">
+                <button class="menu-trigger" (click)="toggleMenu(i, $event)">
+                  <i class="fa fa-ellipsis-h"></i>
+                </button>
 
-              @if (activeMenuIndex === i) {
-                <div class="context-menu" (click)="$event.stopPropagation()">
-                  <button class="menu-item" (click)="onCreateProject(item)">
-                    <i class="fa fa-folder-open"></i>
-                    <span>Crear Proyecto</span>
-                  </button>
-                  <button class="menu-item" (click)="onEditItem(item)">
-                    <i class="fa fa-pencil"></i>
-                    <span>Editar</span>
-                  </button>
-                </div>
-              }
-            </div>
+                @if (activeMenuIndex === i) {
+                  <div class="context-menu" (click)="$event.stopPropagation()">
+                    <!-- ng-container is the section where the template is rendered, context is the data passed to the template -->
+                    <ng-container *ngTemplateOutlet="menuTemplate()!; context: { $implicit: item, close: closeMenuFn }"></ng-container>
+                  </div>
+                }
+              </div>
+            }
           </td>
         </tr>
       } @empty {

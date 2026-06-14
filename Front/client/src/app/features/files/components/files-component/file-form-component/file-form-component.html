@@ -1,0 +1,96 @@
+<form class="form-container" [formGroup]="form" (ngSubmit)="onSubmitFile()">
+  @if (!isEdit()) {
+    <div class="file-preview">
+      <div class="file-icon">
+        <i class="fas fa-file-alt"></i>
+      </div>
+      <div class="file-details">
+        <span class="file-name">{{ selectedFile()?.name }}</span>
+        <span class="file-size">{{ formatFileSize(selectedFile()?.size) }}</span>
+      </div>
+    </div>
+ }
+
+  <div class="form-fields">
+    <div class="form-group">
+      <label for="title"><i class="fas fa-pen"></i> Nombre del archivo</label>
+      <app-form-input 
+        type="text"
+        id="title"
+        placeholder="Ingresa el nombre del archivo"
+        [control]="form.get('fileTitle')!">
+      </app-form-input>
+    </div>
+
+    @if (!projectId() && projects().length !== 0) {
+      <div class="form-group">
+        <label for="project"><i class="fas fa-project-diagram"></i> Proyecto</label>
+        <select id="project" formControlName="projectId" class="form-select">
+          <option value="" disabled>Selecciona un proyecto</option>
+          @for (project of projects(); track project.id) {
+            <option [value]="project.id">{{ project.name }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (!isEdit()) {
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="sameName" formControlName="sameName" class="checkbox-input">
+          <span class="checkbox-custom"></span>
+          <span class="checkbox-text"><i class="fas fa-copy"></i> Usar nombre original del archivo</span>
+        </label>
+      </div>
+    }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="year"><i class="fas fa-calendar"></i> Año</label>
+        <app-form-input 
+          type="number"
+          id="year"
+          placeholder="Año del archivo"
+          [control]="form.get('year')!"
+          [attr.min]="2000"
+          [attr.max]="currentYear">
+        </app-form-input>
+      </div>
+
+      <div class="form-group">
+        <label for="type"><i class="fas fa-tags"></i> Tipo de archivo</label>
+        <div class="select-with-button">
+          <select id="type" formControlName="type_id" class="form-select">
+            <option value="" disabled>Selecciona un tipo</option>
+            @for (type of fileTypesList(); track type.id) {
+              <option [value]="type.id">{{ type.name }}</option>
+            }
+          </select>
+          <app-create-button 
+            [label]="''" 
+            (clicked)="onCreateType()">  
+          </app-create-button>
+        </div>
+      </div>
+    </div>
+
+    <app-confirm-button 
+      [text]="isEdit() ? 'Guardar Cambios' : 'Subir Archivo'" 
+      type="submit"
+      [isDisabled]="form.invalid || (!isEdit() && !selectedFile()) || isLoading()"
+      (clicked)="onSubmitFile()"
+    ></app-confirm-button>
+  </div>
+</form>
+
+@if (showTypeForm()) {
+  <div class="type-form-overlay">
+    <div class="type-form-container">
+      <h3>Crear Tipos de Archivo</h3>
+      <app-types-form 
+        (onSave)="handleSavedTypes($event)"
+        (onCancel)="showTypeForm.set(false)">
+      </app-types-form>
+    </div>
+  </div>
+}

@@ -1,0 +1,47 @@
+<div class="modal-container">
+  <div class="modal-header">
+    <h2>Archivos del Proyecto</h2>
+    <button class="close-icon" (click)="onClose()">×</button>
+  </div>
+
+  <div class="modal-body">
+    @switch (currentView()) {
+      
+      @case (View.LIST) {
+        <app-create-button 
+          [label]="'Subir nuevo archivo'" 
+          (clicked)="onChangeContent()">  
+        </app-create-button>
+        <app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
+        <app-list-files-modal 
+          [files]="files()" 
+          (changeContent)="onChangeContent()"
+          (editFile)="onEditFile($event)"
+          (deleteFile)="onDeleteFile($event)"
+          (downloadFile)="onDownloadFile($event)">
+        </app-list-files-modal>
+      }
+
+      @case (View.UPLOAD) {
+        <app-drag-drop-zone 
+          (fileSelected)="onFileDragged($event)">
+        </app-drag-drop-zone>
+      }
+
+      @case (View.FORM) {
+        <app-file-form
+          [projectId]="projectId()"
+          [fileTypes]="fileTypes()"
+          [preSelectedFile]="selectedFile()"
+          (fileSubmit)="onUploadFile($event)"
+          [projects]="projects()">
+        </app-file-form>
+      }
+      @case (View.TYPE_FORM) {
+       <app-types-form (onSave)="onSaveTypes($event)">
+        
+       </app-types-form>
+      }
+    }
+  </div>
+</div>

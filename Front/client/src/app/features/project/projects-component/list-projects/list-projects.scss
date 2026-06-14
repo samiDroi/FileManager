@@ -1,0 +1,53 @@
+/* 8. BOTÓN DE LISTA / REGISTROS */
+.btn-list {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+
+  i {
+    width: 16px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.btn-list:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-list:active {
+  transform: translateY(0);
+}
+
+/* Estilo para el badge */
+.btn-list .badge {
+  margin-left: auto;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.btn-list:hover .badge {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #4f46e5;
+}

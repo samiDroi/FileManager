@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { ProjectResponse, Client } from '../../../../core';
+import { ProjectData, Client } from '../../../../core';
 import { ClientService } from '../../../clients/services';
+import { CancelButton } from '../../../../shared/components/buttons/cancel-button/cancel-button';
+import { ConfirmButtonComponent } from '../../../../shared/components/buttons/confirm-button-component/confirm-button-component';
 
 @Component({
   selector: 'app-form-component',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CancelButton, ConfirmButtonComponent],
   templateUrl: './form-component.html',
   styleUrl: './form-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,7 +17,7 @@ export class FormComponent implements OnInit{
   private fb = inject(FormBuilder)
   private clientService = inject(ClientService)
   protected data = inject(MAT_DIALOG_DATA);
-  private modalRef = inject(MatDialogRef<ProjectResponse>)
+  private modalRef = inject(MatDialogRef<ProjectData>)
   public isEdit = false;
 
   clients = computed(() => Array.from(this.clientService.state().clients.values()));

@@ -1,22 +1,44 @@
+.c-signin-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background-color: #fbfbfb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.c-signin-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  padding: 40px;
+  overflow: hidden;
+}
+
+.c-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .c-signin-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
   padding: 40px;
   background-color: #fbfbfb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   box-sizing: border-box;
 }
 
 .c-signin-header {
   text-align: center;
   margin-bottom: 30px;
+  width: 100%;
+  max-width: 360px;
 }
 
 .c-logo {
@@ -26,7 +48,7 @@
 }
 
 .c-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
@@ -34,6 +56,7 @@
 
 .c-form {
   width: 100%;
+  max-width: 360px;
 }
 
 .c-button-primary {
@@ -66,6 +89,7 @@
 
 .c-actions {
   width: 100%;
+  max-width: 360px;
   text-align: center;
   margin-top: 20px;
 }
@@ -96,6 +120,41 @@
   font-size: 14px;
   color: #a3a3a3;
   margin-bottom: 12px;
+}
+
+.error-alert {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px;
+  margin-bottom: 20px;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+  font-size: 14px;
+}
+
+/* Responsive: Stack on mobile */
+@media (max-width: 768px) {
+  .c-signin-wrapper {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .c-signin-image {
+    flex: none;
+    height: 300px;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .c-signin-container {
+    flex: none;
+    padding: 30px 20px;
+  }
+
+  .c-title {
+    font-size: 24px;
+  }
 }
 
 .c-button-secondary {

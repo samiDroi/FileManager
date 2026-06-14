@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatDialogClose } from '@angular/material/dialog';
 import { ConfirmButtonComponent, FormInput, } from '../../../shared/components';
 import { AuthService } from '../../auth-service';
 import { AppRoutes } from '../../../core/routes/appRoutes';
@@ -8,7 +9,7 @@ import { AppRoutes } from '../../../core/routes/appRoutes';
 
 @Component({
   selector: 'app-register-component',
-  imports: [FormInput,ReactiveFormsModule,ConfirmButtonComponent],
+  imports: [FormInput,ReactiveFormsModule,ConfirmButtonComponent,MatDialogClose],
   templateUrl: './register-component.html',
   styleUrl: './register-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

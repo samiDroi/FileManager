@@ -21,11 +21,15 @@
   </form>
 
   <div class="modal-footer">
-    <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
-    <button class="btn-save" 
-            [disabled]="projectForm.invalid" 
-            (click)="onSubmit()">
-      {{ isEdit ? 'Actualizar' : 'Guardar' }}
-    </button>
+    <app-cancel-button 
+      [label]="'Cancelar'" 
+      (clicked)="onCancel()">  
+    </app-cancel-button>
+    <app-confirm-button 
+      [text]="isEdit ? 'Actualizar' : 'Guardar'" 
+      type="button"
+      [isDisabled]="projectForm.invalid" 
+      (clicked)="onSubmit()">  
+    </app-confirm-button>
   </div>
 </div>

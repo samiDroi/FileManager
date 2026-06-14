@@ -6,6 +6,9 @@ export const AppRoutes = {
     auth: {
         register: 'register',
         login: 'login',
+        forgotPassword: 'forgot-password',
+        resetPassword: 'reset-password',
+        recoveryPassword: 'recovery-password',
         notFound: '404'
     },
     features:{

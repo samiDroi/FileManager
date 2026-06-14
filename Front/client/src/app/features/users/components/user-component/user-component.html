@@ -1,0 +1,12 @@
+<div class="toolbar">
+    <app-ui-search-bar 
+        placeholder="Buscar usuarios..." 
+        (search)="onSearch($event)">
+    </app-ui-search-bar>
+    <app-create-button label="Crear Usuario" (clicked)="openCreateUserModal()"></app-create-button>
+</div>
+@if (users().length > 0) {
+  <app-list-users [usersList]="users()"></app-list-users>
+}@else {
+    <p>No hay usuarios disponibles.</p>
+}

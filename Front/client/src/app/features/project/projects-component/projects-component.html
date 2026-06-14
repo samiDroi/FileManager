@@ -1,8 +1,9 @@
 <div class="header">
   <h2>Gestión de proyectos</h2>
-  <button (click)="openCreateProjectModal()" class="btn-primary">
-    + Nuevo Proyecto
-  </button>
+  <app-create-button 
+    [label]="'+ Nuevo Proyecto'" 
+    (clicked)="openCreateProjectModal()">  
+  </app-create-button>
 </div>
 
 <div class="toolbar">
@@ -15,5 +16,6 @@
 <app-list-projects 
   [projectsList]="projectsList()" 
   [isLoading]="loading()"
-  (editProject)="openEditProjectModal($event)">
+  (editProject)="openEditProjectModal($event)"
+  (goToFiles)="openFilesModal($event)">
 </app-list-projects>

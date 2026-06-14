@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { RouterModule } from '@angular/router';
 import { App } from '../../../app';
 import { AppRoutes } from '../../../core/routes/appRoutes';
+import { CancelButton } from '../../../shared/components/buttons/cancel-button/cancel-button';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterModule],
+  imports: [RouterModule, CancelButton],
   templateUrl: './sidebar-component.html',
   styleUrl: './sidebar-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

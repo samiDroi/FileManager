@@ -1,0 +1,110 @@
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { NgTemplateOutlet } from '@angular/common'; // <-- Import corregido
+import { FileService } from '../../services';
+import { FileRequest, FileData, ProjectData } from '../../../../core';
+import { CreateButton } from '../../../../shared/components/buttons/create-button/create-button';
+// Importa tus componentes (rutas omitidas por brevedad)
+import { ListFilesModal } from './list-files-modal/list-files-modal';
+import { FileFormComponent } from '../files-component/file-form-component/file-form-component';
+import { DragDropZoneComponent } from '../drag-drop-zone/drag-drop-zone';
+import { FormComponent } from '../../../typeFiles/components/type-files-component/form-component/form-component';
+import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
+import { MatDialog } from '@angular/material/dialog';
+import { TypeFiles } from '../../../typeFiles/services/type-files';
+
+
+export enum DynamicContent {
+  LIST,
+  UPLOAD,
+  FORM,
+  TYPE_FORM
+}
+
+@Component({
+  selector: 'app-project-files-modal',
+  standalone: true, // Asumo que usas standalone en Angular 21
+  imports: [ListFilesModal, FileFormComponent, DragDropZoneComponent, FormComponent,UiSearchBarComponent, CreateButton],
+  templateUrl: './project-files-modal.html',
+  styleUrl: './project-files-modal.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ProjectFilesModalComponent implements OnInit {
+  private fileService = inject(FileService);
+  private modalRef = inject(MatDialogRef<ProjectFilesModalComponent>);
+  private editDialog = inject(MatDialog);
+  protected data = inject(MAT_DIALOG_DATA);
+  private fileTypeService = inject(TypeFiles);
+  // 1. Exponemos el enum al template para usarlo en el @switch
+  readonly View = DynamicContent;
+
+  // 2. Convertimos la vista actual a un Signal reactivo
+  currentView = signal<DynamicContent>(DynamicContent.LIST);
+  projects = signal<ProjectData[]>([]);
+  projectId = computed(() => this.data?.project?.id);
+  selectedFile = signal<File | null>(null);
+  files = computed(() => this.fileService.state().filesByProject.get(this.projectId()) ?? []);
+  fileTypes = computed(() => this.fileService.state().fileTypes);
+  loading = computed(() => this.fileService.state().loading);
+  
+  ngOnInit(): void {
+    const projectId = this.data?.project?.id;
+    if (projectId) {
+      this.fileService.getByProjectId(projectId);
+      this.fileTypeService.getFileTypes();
+    }
+  }
+
+  // --- MÉTODOS DE NAVEGACIÓN Y ESTADO ---
+
+  onChangeContent(): void {
+    this.currentView.set(DynamicContent.UPLOAD);
+    this.selectedFile.set(null);
+  }
+
+  onFileDragged(file: File): void {
+    this.selectedFile.set(file);
+    // Cambiamos la vista reactivamente
+    this.currentView.set(DynamicContent.FORM); 
+  }
+
+  onUploadFile(file: FileRequest) {
+    this.fileService.uploadFile(file);
+    console.log('Archivo subido:', file);
+    this.currentView.set(DynamicContent.LIST); // Volvemos a la lista después de subir
+  }
+
+  // --- OTROS MÉTODOS ---
+
+  onEditFile(file: FileData): void {
+    this.editDialog.open(FileFormComponent, {
+      width: '520px',
+      data: {
+        file,
+        fileTypes: this.fileTypes()
+      }
+    });
+  }
+
+  onClose(): void {
+    this.modalRef.close();
+  }
+
+ 
+  onDeleteFile(file: FileData): void {
+    this.fileService.deleteFile(file);
+  }
+
+  onDownloadFile(file: FileData): void {
+    this.fileService.downloadFile(file.id);
+  }
+  OnTypeForm(): void {
+    this.currentView.set(DynamicContent.TYPE_FORM);
+  }
+  onSaveTypes(types: {name: string}[]): void {
+    
+  }
+  onSearch(query: string): void {
+    this.fileService.onSearch(query);
+  }
+}

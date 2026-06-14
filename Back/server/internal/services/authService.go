@@ -28,13 +28,13 @@ func (s *AuthService) RegisterUser(ctx echo.Context, user models.User) (*models.
 	user.Password = string(hashedPassword)
 
 	// Le pedimos al store que lo guarde y retorne el usuario con ID asignado.
-	return s.ur.CreateUsers(&user, ctx)
+	return s.ur.CreateUsers(&user, ctx.Request().Context())
 }
 
 func (s *AuthService) LoginUser(ctx echo.Context, username string, password string) (*models.User, error) {
 	// Buscamos el usuario por username
 	// fmt.Print(ctx, username)
-	user, err := s.ur.GetUserByUsername(ctx, username)
+	user, err := s.ur.GetUserByUsername(ctx.Request().Context(), username)
 	if err != nil {
 		// Imprime el error exacto en tu consola para que puedas verlo
 		fmt.Printf("ERROR: %v\n", err)

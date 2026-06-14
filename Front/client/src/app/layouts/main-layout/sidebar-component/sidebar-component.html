@@ -1,11 +1,11 @@
 <aside class="sidebar-container">
   <div class="brand">
-    <h1>Mi App</h1>
+    <h1>File Manager</h1>
   </div>
  <span class="label">Menu</span>
  <nav class="nav-menu">
  
-  <a routerLink="/usuarios" routerLinkActive="active" class="nav-item">
+  <a [routerLink]="[routes.users]" routerLinkActive="active" class="nav-item">
     <i class="fa fa-users"></i> 
     <span class="label">Usuarios</span>
   </a>
@@ -19,7 +19,10 @@
     <i class="fa fa-briefcase"></i> 
     <span class="label">Clientes</span>
   </a>
-
+  <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item">
+    <i class="fa fa-file"></i> 
+    <span class="label">Archivos</span>
+  </a>
   <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
     <i class="fa fa-cog"></i> 
     <span class="label">Configuración</span>
@@ -33,7 +36,10 @@
       <span class="name">{{ userData.username }}</span>
       <span class="role">{{ userData.email }}</span>
     </div>
-    <button class="logout-btn" (click)="emitLogout()">Cerrar Sesión</button>
+    <app-cancel-button 
+      [label]="'Cerrar Sesión'" 
+      (clicked)="emitLogout()">  
+    </app-cancel-button>
   </div>
 }
 </aside>

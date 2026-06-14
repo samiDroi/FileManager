@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"log"
+	"server/internal/domain/dtos"
 	"server/internal/domain/models"
+	"server/internal/utils"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,46 +15,47 @@ type ProjectRepository struct {
 	db *pgxpool.Pool
 }
 
-// constructor
 func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
 	return &ProjectRepository{db: db}
 }
-func (r *ProjectRepository) GetAllProjects(c context.Context) ([]*models.ProjectToDto, error) {
+
+func (r *ProjectRepository) GetAllProjects(ctx context.Context) ([]dtos.ProjectResponse, error) {
 	q := `SELECT p.id, p.name, p.client_id, p.created_at, c.name,
-			 (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
-			FROM projects p 
-			LEFT JOIN clients c ON c.id = p.client_id`
-	rows, err := r.db.Query(c, q)
+		  (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
+		  FROM projects p 
+		  LEFT JOIN clients c ON c.id = p.client_id`
+
+	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	Projects := []*models.ProjectToDto{}
+	var projects []dtos.ProjectResponse
 	for rows.Next() {
-		var Project models.ProjectToDto
-
-		if err := rows.Scan(&Project.ID, &Project.Name, &Project.ClientID, &Project.CreatedAt, &Project.ClientName, &Project.CountFiles); err != nil {
+		var p dtos.ProjectResponse
+		var createdAt time.Time
+		if err := rows.Scan(&p.ID, &p.Name, &p.ClientID, &createdAt, &p.ClientName, &p.CountFiles); err != nil {
 			return nil, err
 		}
-		Projects = append(Projects, &Project)
+		p.CreatedAt = utils.ToCustomTime(createdAt)
+		projects = append(projects, p)
 	}
-	return Projects, nil
+	return projects, nil
 }
-func (r *ProjectRepository) Search(ctx context.Context, searchParam string) ([]*models.ProjectToDto, error) {
-	results := []*models.ProjectToDto{}
 
+func (r *ProjectRepository) Search(ctx context.Context, searchParam string) ([]dtos.ProjectResponse, error) {
 	if searchParam == "" {
-		return results, nil
+		return []dtos.ProjectResponse{}, nil
 	}
 
 	searchPattern := "%" + searchParam + "%"
 
-query := `
+	query := `
         SELECT p.id, p.name, p.client_id, p.created_at, c.name,
- 			 (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
- 			FROM projects p 
- 			LEFT JOIN clients c ON c.id = p.client_id
+ 		  (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
+ 		  FROM projects p 
+ 		  LEFT JOIN clients c ON c.id = p.client_id
         WHERE p.name ILIKE $1 OR c.name ILIKE $1
     `
 
@@ -62,29 +65,25 @@ query := `
 	}
 	defer rows.Close()
 
+	var projects []dtos.ProjectResponse
 	for rows.Next() {
-		var p models.ProjectToDto
-
-		if err := rows.Scan(
-			&p.ID,
-			&p.Name,
-			&p.ClientID,
-			&p.CreatedAt,
-			&p.ClientName,
-			&p.CountFiles,
-		); err != nil {
+		var p dtos.ProjectResponse
+		var createdAt time.Time
+		if err := rows.Scan(&p.ID, &p.Name, &p.ClientID, &createdAt, &p.ClientName, &p.CountFiles); err != nil {
 			return nil, err
 		}
-		results = append(results, &p)
+		p.CreatedAt = utils.ToCustomTime(createdAt)
+		projects = append(projects, p)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return projects, nil
 }
-func (r *ProjectRepository) CreateProject(c context.Context, project *models.Project, userID int) (*models.Project, error) {
+
+func (r *ProjectRepository) CreateProject(ctx context.Context, project *models.Project, userID int) (*models.Project, error) {
 	log.Printf("=== CREATE PROJECT REPO DEBUG ===")
 	log.Printf("ClientID: %d, Name: %s, UserID: %d", project.ClientID, project.Name, userID)
 
@@ -93,7 +92,7 @@ func (r *ProjectRepository) CreateProject(c context.Context, project *models.Pro
         RETURNING id, created_at`
 	var projectID int
 	var createdAt time.Time
-	err := r.db.QueryRow(c, q, project.ClientID, project.Name, userID, userID).Scan(&projectID, &createdAt)
+	err := r.db.QueryRow(ctx, q, project.ClientID, project.Name, userID, userID).Scan(&projectID, &createdAt)
 	if err != nil {
 		log.Printf("ERROR inserting project: %v", err)
 		return nil, err
@@ -104,42 +103,44 @@ func (r *ProjectRepository) CreateProject(c context.Context, project *models.Pro
 	return project, nil
 }
 
-func (r *ProjectRepository) UpdateProject(c context.Context, project *models.Project, projectID int) error {
+func (r *ProjectRepository) UpdateProject(ctx context.Context, project *models.Project, projectID int) error {
 	q := `UPDATE projects 
 	      SET name = $1, client_id = $2 
 	      WHERE id = $3`
-	_, err := r.db.Exec(c, q, project.Name, project.ClientID, projectID)
-
+	_, err := r.db.Exec(ctx, q, project.Name, project.ClientID, projectID)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
-func (r *ProjectRepository) GetProjectById(c context.Context, projectID int) (*models.ProjectToDto, error) {
+
+func (r *ProjectRepository) GetProjectById(ctx context.Context, projectID int) (*dtos.ProjectResponse, error) {
 	q := `SELECT p.id, p.name, p.client_id, p.created_at, c.name,
-		(SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
-		FROM projects p 
-		LEFT JOIN clients c ON c.id = p.client_id
-		WHERE p.id = $1`
-	var project models.ProjectToDto
-	err := r.db.QueryRow(c, q, projectID).Scan(
-		&project.ID,
-		&project.Name,
-		&project.ClientID,
-		&project.CreatedAt,
-		&project.ClientName,
-		&project.CountFiles,
+		  (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
+		  FROM projects p 
+		  LEFT JOIN clients c ON c.id = p.client_id
+		  WHERE p.id = $1`
+
+	var p dtos.ProjectResponse
+	var createdAt time.Time
+	err := r.db.QueryRow(ctx, q, projectID).Scan(
+		&p.ID,
+		&p.Name,
+		&p.ClientID,
+		&createdAt,
+		&p.ClientName,
+		&p.CountFiles,
 	)
+	p.CreatedAt = utils.ToCustomTime(createdAt)
 	if err != nil {
 		return nil, err
 	}
-	return &project, nil
+	return &p, nil
 }
 
-func (r *ProjectRepository) GetClientName(c context.Context, clientID int) (string, error) {
+func (r *ProjectRepository) GetClientName(ctx context.Context, clientID int) (string, error) {
 	var clientName string
-	err := r.db.QueryRow(c, `SELECT name FROM clients WHERE id = $1`, clientID).Scan(&clientName)
+	err := r.db.QueryRow(ctx, `SELECT name FROM clients WHERE id = $1`, clientID).Scan(&clientName)
 	if err != nil {
 		return "", err
 	}

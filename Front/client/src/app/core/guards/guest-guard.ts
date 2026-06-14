@@ -5,6 +5,7 @@ import { CheckPlatformUtils } from '../../utils';
 import { AuthStateService } from '../../auth/auth-state.service';
 
 export const guestGuard: CanActivateChildFn = () => {
+  //guard for routes that should only be accessible to guests (not logged in users)
   const router = inject(Router);
   const platformUtils = inject(CheckPlatformUtils);
   const authState = inject(AuthStateService);
@@ -13,7 +14,7 @@ export const guestGuard: CanActivateChildFn = () => {
     return true;
   }
 
-  if (!authState.isLoggedIn()) {
+  if (!authState.currentUser()) {
     return true;
   }
 

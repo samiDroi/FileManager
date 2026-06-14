@@ -21,6 +21,8 @@ type AuthHandler struct {
 func NewAuthHandler(s *services.AuthService) *AuthHandler {
 	return &AuthHandler{service: s}
 }
+
+// there is one just RegisterRoutes because they're in the same package, so there is the resetPassword's routes
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	// A. Construimos la cadena de mando de este módulo
 	repo := repository.NewUserRepository(db)
@@ -37,6 +39,10 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	//midlleware isAuthenticated for logout
 	g.POST(paths.Auth.Logout.Route, h.Logout, middlewares.IsAuthenticated)
 	g.POST(paths.Auth.RefreshTkn.Route, h.RefreshToken)
+
+	rh := NewResetPasswordHandler(db)
+	g.POST(paths.Auth.ForgotPwd.Route, rh.ForgotPassword)
+	g.POST(paths.Auth.RecoveryPwd.Route, rh.RecoveryPassword)
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
