@@ -142,9 +142,9 @@ uploadFile(fileRequest: FileRequest) {
 
     // 1. Condición vital: Solo agregamos el project_id si viene en la petición
     // Si viene del formulario global (sin proyecto), simplemente no se envía este dato al backend
-    if (fileRequest.project_id !== undefined && fileRequest.project_id !== null) {
-      formData.append('project_id', fileRequest.project_id.toString());
-    }
+    // if (fileRequest.project_id !== undefined && fileRequest.project_id !== null) {
+    //   formData.append('project_id', fileRequest.project_id.toString());
+    // }
 
     this.http.post<FileData>(ApiRoutes.files.upload, formData).pipe(
       catchError(error => {

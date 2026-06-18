@@ -26,7 +26,13 @@ var Auth = struct {
 	RecoveryPwd Static
 	changePwd   Static
 }{Prefix: ""}
-
+var ClientsSidebar = struct {
+	Prefix string
+	Index  Static
+}{
+	Prefix: "/clients-projects",
+	Index:  newStatic("/clients-projects", ""),
+}
 var Dashboard = struct {
 	Prefix   string
 	Index    Static

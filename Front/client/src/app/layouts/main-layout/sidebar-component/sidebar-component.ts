@@ -1,26 +1,42 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, input, Input, Output } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { App } from '../../../app';
+import { FormsModule } from '@angular/forms';
 import { AppRoutes } from '../../../core/routes/appRoutes';
-import { CancelButton } from '../../../shared/components/buttons/cancel-button/cancel-button';
+import { ClientData, ClientsWithProjects } from '../../../core';
+import { CreateButton } from '../../../shared/components/buttons/create-button/create-button';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterModule, CancelButton],
+  imports: [RouterModule, FormsModule,CreateButton],
   templateUrl: './sidebar-component.html',
   styleUrl: './sidebar-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
   protected readonly routes = AppRoutes.features;
-  // Recibe la info del padre
-  @Input() userData: any = null; 
+  clientsList = input<ClientData[] | null>(null);
+  @Input() userData: any = null;
 
-  // Avisa al padre cuando el usuario quiere salir
   @Output() onLogout = new EventEmitter<void>();
+  @Output() onCreateClient = new EventEmitter<void>();
+
+  searchTerm = '';
+
+  get filteredClients(): ClientData[] {
+    if (!this.searchTerm.trim()) {
+      return this.clientsList() ?? [];
+    }
+    const term = this.searchTerm.toLowerCase();
+    return (this.clientsList() ?? []).filter(c =>
+      c.name.toLowerCase().includes(term)
+    );
+  }
 
   emitLogout() {
     this.onLogout.emit();
+  }
+
+  emitCreateClient() {
+    this.onCreateClient.emit();
   }
 }

@@ -7,7 +7,7 @@
 }@else {
     <ng-template #fileRow let-file>
         <td>
-            <span>{{ file.tittle }}</span>
+            <span class="file-title" (click)="onViewFile(file)">{{ file.tittle }}</span>
         </td>
         <td>
             <span>{{ file.project_name }}</span>
@@ -21,6 +21,9 @@
     </ng-template>
 
     <ng-template #contextMenu let-item let-closeMenu="close">
+        <button class="menu-item" (click)="onViewFile(item); closeMenu()">
+          <i class="fas fa-eye"></i> Vista previa
+        </button>
         <app-edit-button 
           [label]="'Editar'" 
           (clicked)="onEditFile(item); closeMenu()">  

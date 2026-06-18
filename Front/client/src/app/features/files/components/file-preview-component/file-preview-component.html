@@ -1,0 +1,60 @@
+<div class="preview-container">
+  <div class="preview-header">
+    <h2>{{ file.tittle }}</h2>
+    <button class="close-icon" (click)="onClose()">×</button>
+  </div>
+
+  <div class="preview-body">
+    @if (loading()) {
+      <div class="preview-content loading-state">
+        <div class="spinner"></div>
+        <p>Cargando archivo...</p>
+      </div>
+    } @else if (loadError()) {
+      <div class="preview-content unsupported">
+        <i class="fas fa-exclamation-triangle fa-4x"></i>
+        <p>Error al cargar el archivo</p>
+        <button class="btn-download" (click)="onDownload()">
+          <i class="fas fa-download"></i> Descargar archivo
+        </button>
+      </div>
+    } @else if (objectUrl(); as url) {
+      @switch (fileKind()) {
+        @case ('image') {
+          <div class="preview-content image-preview">
+            <img [src]="url | safeUrl" [alt]="file.tittle" />
+          </div>
+        }
+        @case ('pdf') {
+          <div class="preview-content pdf-preview">
+            <iframe [src]="url | safeUrl" width="100%" height="100%" frameborder="0"></iframe>
+          </div>
+        }
+        @case ('video') {
+          <div class="preview-content media-preview">
+            <video [src]="url | safeUrl" controls autoplay></video>
+          </div>
+        }
+        @case ('audio') {
+          <div class="preview-content media-preview audio-only">
+            <audio [src]="url | safeUrl" controls autoplay></audio>
+          </div>
+        }
+        @case ('text') {
+          <div class="preview-content text-preview">
+            <iframe [src]="url | safeUrl" width="100%" height="100%" frameborder="0"></iframe>
+          </div>
+        }
+        @default {
+          <div class="preview-content unsupported">
+            <i class="fas fa-file fa-4x"></i>
+            <p>Vista previa no disponible para este tipo de archivo</p>
+            <button class="btn-download" (click)="onDownload()">
+              <i class="fas fa-download"></i> Descargar archivo
+            </button>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

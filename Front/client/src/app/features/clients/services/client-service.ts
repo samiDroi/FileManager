@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, EMPTY, map } from 'rxjs';
-import { ClientRequest, ClientData } from '../../../core/domain/dtos';
+import { ClientRequest, ClientData, ClientsWithProjects } from '../../../core/domain/dtos';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
@@ -12,6 +12,11 @@ export class ClientService {
 
   state = signal({
     clients: new Map<number, ClientData>(),
+    loading: true
+  });
+
+  stateWithProjects = signal({
+    clientsWithProjects: [] as ClientsWithProjects[],
     loading: true
   });
 
@@ -83,6 +88,7 @@ export class ClientService {
             loading: false
           };
         });
+        this.getClientsWithProjects();
       },
 
       error: (error) => {
@@ -110,6 +116,21 @@ export class ClientService {
       error: (error) => {
         console.error('Error al actualizar:', error);
         this.state.update(state => ({ ...state, loading: false }));
+      }
+    });
+  }
+  getClientsWithProjects(){
+    this.http.get<ClientsWithProjects[]>(ApiRoutes.clients.withProjects, {withCredentials:true}).subscribe({
+      next: (data) => {
+        this.stateWithProjects.update(state => ({
+          ...state,
+          clientsWithProjects: data,
+          loading: false
+        }));
+      },
+      error: (error) => {
+        console.error('Error al obtener clientes con proyectos:', error);
+        this.stateWithProjects.update(state => ({ ...state, loading: false }));
       }
     });
   }

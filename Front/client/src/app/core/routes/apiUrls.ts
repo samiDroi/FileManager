@@ -35,6 +35,7 @@ export const ApiRoutes = {
 
     files: {
         upload:   `${PREFIX.files}/upload`,
+        preview:  (fileId: number) => `${PREFIX.files}/${fileId}/preview`,
         download: (fileId: number) => `${PREFIX.files}/${fileId}/download`,
         delete:   (fileId: number) => `${PREFIX.files}/${fileId}`,
         getAll:   `${PREFIX.files}`,
@@ -50,6 +51,7 @@ export const ApiRoutes = {
         getAll: `${PREFIX.clients}`,
         search: `${PREFIX.clients}/search`,
         create: `${PREFIX.clients}/new`,
+        withProjects: `${PREFIX.clients}/with-projects`,
         getById: (id: string | number) => `${PREFIX.clients}/${id}`,
         update: (id: string | number) => `${PREFIX.clients}/edit/${id}`,
         delete: (id: string | number) => `${PREFIX.clients}/delete/${id}`

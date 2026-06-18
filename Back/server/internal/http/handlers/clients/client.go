@@ -35,6 +35,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	g.POST(paths.Client.New.Route, h.Create)
 	g.PUT(paths.Client.Edit.Route, h.Edit)
 	g.DELETE(paths.Client.Delete.Route, h.Delete)
+	g.GET(paths.Client.WithProjects.Route, h.GetClientsWithProjects)
 }
 
 func (h *ClientHandler) GetAll(c echo.Context) error {
@@ -149,4 +150,11 @@ func (h *ClientHandler) Delete(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Cliente eliminado correctamente"})
+}
+func (h *ClientHandler) GetClientsWithProjects(c echo.Context) error {
+	clients, err := h.repo.GetClientsWithProjects(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, clients)
 }

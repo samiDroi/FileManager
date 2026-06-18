@@ -3,7 +3,9 @@
   <app-sidebar 
     class="layout-sidebar"
     [userData]="currentUser()" 
-    (onLogout)="handleLogout()">
+    (onLogout)="handleLogout()"
+    (onCreateClient)="openCreateClientModal()"
+    [clientsList]="clients()">
   </app-sidebar>
 
   <main class="layout-main">

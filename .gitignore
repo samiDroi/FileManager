@@ -22,3 +22,8 @@ dist/
 *.dll
 *.so
 *.dylib
+
+# ========================
+# Archivos subidos por el sistema
+# ========================
+uploads/

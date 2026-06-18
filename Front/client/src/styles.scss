@@ -39,3 +39,30 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+.file-preview-dialog {
+  width: 95vw !important;
+  max-width: 95vw !important;
+  min-width: 500px !important;
+  height: 95vh !important;
+  max-height: 95vh !important;
+
+  .mat-mdc-dialog-surface {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .mat-mdc-dialog-content {
+    flex: 1 !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    height: 100% !important;
+  }
+}
+

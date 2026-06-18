@@ -7,6 +7,7 @@ import { CreateButton } from '../../../../shared/components/buttons/create-butto
 // Importa tus componentes (rutas omitidas por brevedad)
 import { ListFilesModal } from './list-files-modal/list-files-modal';
 import { FileFormComponent } from '../files-component/file-form-component/file-form-component';
+import { FilePreviewComponent } from '../file-preview-component/file-preview-component';
 import { DragDropZoneComponent } from '../drag-drop-zone/drag-drop-zone';
 import { FormComponent } from '../../../typeFiles/components/type-files-component/form-component/form-component';
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
@@ -44,7 +45,7 @@ export class ProjectFilesModalComponent implements OnInit {
   projectId = computed(() => this.data?.project?.id);
   selectedFile = signal<File | null>(null);
   files = computed(() => this.fileService.state().filesByProject.get(this.projectId()) ?? []);
-  fileTypes = computed(() => this.fileService.state().fileTypes);
+  fileTypes = computed(() => this.fileTypeService.state().fileTypes);
   loading = computed(() => this.fileService.state().loading);
   
   ngOnInit(): void {
@@ -83,6 +84,15 @@ export class ProjectFilesModalComponent implements OnInit {
         file,
         fileTypes: this.fileTypes()
       }
+    });
+  }
+
+  onViewFile(file: FileData): void {
+    this.editDialog.open(FilePreviewComponent, {
+      data: file,
+      width: '95vw',
+      height: '95vh',
+      panelClass: 'file-preview-dialog'
     });
   }
 

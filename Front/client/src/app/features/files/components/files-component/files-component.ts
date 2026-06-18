@@ -6,6 +6,7 @@ import { CreateButton } from '../../../../shared/components/buttons/create-butto
 import { MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
 import { FileFormComponent } from './file-form-component/file-form-component';
+import { FilePreviewComponent } from '../file-preview-component/file-preview-component';
 import { DragDropZoneComponent } from '../drag-drop-zone/drag-drop-zone';
 import { ProjectFilesModalComponent } from '../project-files-modal';
 import { WizardModal } from '../../../../shared/components';
@@ -80,6 +81,15 @@ export class FilesComponent implements OnInit {
 
   onDownloadFile(file: FileData): void {
     this.filesService.downloadFile(file.id);
+  }
+
+  onViewFile(file: FileData): void {
+    this.modalRef.open(FilePreviewComponent, {
+      data: file,
+      width: '95vw',
+      height: '95vh',
+      panelClass: 'file-preview-dialog'
+    });
   }
 
   onDeleteFile(file: FileData): void {

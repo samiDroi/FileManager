@@ -78,6 +78,10 @@ export const routes: Routes = [
             {
                 path: AppRoutes.features.files,
                 loadComponent: () => import('./features/files/components/files-component/files-component').then(m => m.FilesComponent)
+            },
+            {
+                path: 'client/:id',
+                loadComponent: () => import('./features/project/dynamic-list-component/dynamic-list-component').then(m => m.DynamicListComponent)
             }
         ]
        },

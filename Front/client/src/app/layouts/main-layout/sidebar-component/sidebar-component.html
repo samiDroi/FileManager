@@ -1,45 +1,68 @@
 <aside class="sidebar-container">
   <div class="brand">
-    <h1>File Manager</h1>
+    <h1><i class="fa fa-cloud"></i> File Manager</h1>
   </div>
- <span class="label">Menu</span>
- <nav class="nav-menu">
- 
-  <a [routerLink]="[routes.users]" routerLinkActive="active" class="nav-item">
-    <i class="fa fa-users"></i> 
-    <span class="label">Usuarios</span>
-  </a>
 
-  <a [routerLink]='[routes.projects]' routerLinkActive="active" class="nav-item">
-    <i class="fa fa-folder-open"></i> 
-    <span class="label">proyectos</span>
-  </a>
+  <div class="sidebar-section">
+    <span class="section-label">Vistas Globales</span>
+    <nav class="nav-menu">
+      <a [routerLink]="[routes.files]" class="nav-item">
+        <i class="fa fa-file"></i> <span class="label">Todos los Archivos</span>
+      </a>
+      <a [routerLink]="[routes.projects]" class="nav-item">
+        <i class="fa fa-folder-open"></i> <span class="label">Todos los Proyectos</span>
+      </a>
+      <a [routerLink]="[routes.clients]" class="nav-item">
+        <i class="fa fa-briefcase"></i> <span class="label">Todos los Clientes</span>
+      </a>
+    </nav>
+  </div>
 
-  <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
-    <i class="fa fa-briefcase"></i> 
-    <span class="label">Clientes</span>
-  </a>
-  <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item">
-    <i class="fa fa-file"></i> 
-    <span class="label">Archivos</span>
-  </a>
-  <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
-    <i class="fa fa-cog"></i> 
-    <span class="label">Configuración</span>
-  </a>
-</nav>
-  
-@if(userData){
-    <div class="user-footer">
-    <div class="user-info">
-      <!-- {{ userData }} -->
-      <span class="name">{{ userData.username }}</span>
-      <span class="role">{{ userData.email }}</span>
+  <hr class="divider">
+
+  <div class="sidebar-section clients-section">
+    
+    <div class="clients-header">
+      <span class="section-label">Mis Clientes</span>
+      <app-create-button 
+        [label]="'+ Nuevo Cliente'" 
+        (clicked)="emitCreateClient()">  
+      </app-create-button>
     </div>
-    <app-cancel-button 
-      [label]="'Cerrar Sesión'" 
-      (clicked)="emitLogout()">  
-    </app-cancel-button>
+
+    <div class="search-container">
+      <i class="fa fa-search search-icon"></i>
+      <input type="text" class="search-input" placeholder="Filtrar clientes..." [(ngModel)]="searchTerm">
+    </div>
+    
+
+    <div class="clients-scroll-area">
+      @for (client of filteredClients; track $index) {
+        <div class="client-item" [routerLink]="['/overview/client', client.id]">
+          <div class="client-summary">
+            <i class="fa fa-building"></i> <span>{{ client.name }}</span>
+          </div>
+        </div>
+      }
+    </div>
   </div>
-}
+
+  <div class="sidebar-footer">
+    <a routerLink="/configuracion" class="nav-item">
+      <i class="fa fa-cog"></i> <span class="label">Configuración</span>
+    </a>
+    
+    @if(userData) {
+      <div class="user-card">
+        <div class="user-avatar">{{ userData.username.charAt(0) }}</div>
+        <div class="user-info">
+          <span class="name">{{ userData.username }}</span>
+          <span class="email">{{ userData.email }}</span>
+        </div>
+        <button class="btn-logout" (click)="emitLogout()" title="Cerrar Sesión">
+          <i class="fa fa-sign-out"></i>
+        </button>
+      </div>
+    }
+  </div>
 </aside>
