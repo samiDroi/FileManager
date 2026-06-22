@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { UserData } from '../../../core/domain/dtos/user';
 import { ApiRoutes } from '../../../core/routes';
+import Swal from '../../../shared/utils/swal';
 
 
 @Injectable({
@@ -37,6 +38,13 @@ export class UserService {
         const updatedUsers = new Map(currentState.users);
         updatedUsers.set(updatedUser.id, updatedUser);
         this.state.set({ ...currentState, users: updatedUsers });
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario actualizado',
+          text: 'El usuario se ha actualizado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       },
       error: (err) => {
         console.error('Error al editar usuario:', err);
@@ -44,13 +52,33 @@ export class UserService {
     });
   }
 
-  deleteUser(userId: number): void{
+  async deleteUser(userId: number): Promise<void> {
+    const result = await Swal.fire({
+      title: '¿Eliminar usuario?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (!result.isConfirmed) return;
+
     this.http.delete(ApiRoutes.users.delete(userId), { withCredentials: true }).subscribe({
       next: () => {
         const currentState = this.state();
         const updatedUsers = new Map(currentState.users);
         updatedUsers.delete(userId);
         this.state.set({ ...currentState, users: updatedUsers });
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario eliminado',
+          text: 'El usuario se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       },
       error: (err) => {
         console.error('Error al eliminar usuario:', err);

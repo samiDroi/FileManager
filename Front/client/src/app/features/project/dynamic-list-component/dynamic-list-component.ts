@@ -12,10 +12,11 @@ import { ClientService } from '../../../features/clients/services';
 import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../projects-component/form-component/form-component';
 import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
+import { UiSearchBarComponent } from '../../../shared/components/search-bar/ui-search-bar-component';
 
 @Component({
   selector: 'app-dynamic-list',
-  imports: [UiTableComponent, EditButton, CreateButton],
+  imports: [UiTableComponent, EditButton, CreateButton,UiSearchBarComponent],
   templateUrl: './dynamic-list-component.html',
   styleUrl: './dynamic-list-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,5 +97,8 @@ export class DynamicListComponent {
       maxWidth: '95vw',
       data: { project }
     });
+  }
+  onSearch(query: string): void {
+    this.projectService.searchProjects(query);
   }
 }

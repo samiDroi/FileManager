@@ -5,7 +5,7 @@ import { AuthStateService } from './auth-state.service';
 import { ApiRoutes } from '../core/routes/apiUrls';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppRoutes } from '../core/routes/appRoutes';
-import Swal from 'sweetalert2';
+import Swal from '../shared/utils/swal';
 
 @Injectable({
   providedIn: 'root',

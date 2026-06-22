@@ -15,6 +15,7 @@ import { WizardModalComponent } from './wizard-modal-component/wizard-modal-comp
 import { projectService } from '../../../project/services';
 import { TypeFiles } from '../../../typeFiles/services/type-files';
 import { FileTypeRequest } from '../../../../core/domain/dtos/fileType';
+import Swal from 'sweetalert2';
 enum View {
   DRAG,
   FORM
@@ -93,7 +94,20 @@ export class FilesComponent implements OnInit {
   }
 
   onDeleteFile(file: FileData): void {
-    this.filesService.deleteFile(file);
+    Swal.fire({
+      title: '¿Eliminar archivo?',
+      text: `Se eliminará "${file.tittle}" permanentemente`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.filesService.deleteFile(file);
+      }
+    });
   }
   onSearch(query: string): void {
     this.filesService.onSearch(query);

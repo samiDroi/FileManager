@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../auth-service';
-import Swal from 'sweetalert2';
+import Swal from '../../../shared/utils/swal';
 import { finalize } from 'rxjs';
 
 @Component({

@@ -101,6 +101,7 @@ func (h *FileHandler) Upload(c echo.Context) error {
 	if req.ProjectID == 0 || req.Tittle == "" || req.Year == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "project_id, tittle and year are required"})
 	}
+	userSess := middlewares.GetRequestUserSession(c)
 
 	src, err := file.Open()
 	if err != nil {
@@ -112,7 +113,7 @@ func (h *FileHandler) Upload(c echo.Context) error {
 	safeFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 
 	// newFile, err := h.repo.SaveFile(c.Request().Context(), req.ProjectID, req.Tittle, req.Year, safeFileName, src)
-	newFile, err := h.repo.SaveFile(c.Request().Context(), req, safeFileName, src)
+	newFile, err := h.repo.SaveFile(c.Request().Context(), req, safeFileName, src, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

@@ -13,6 +13,7 @@ import { FormComponent } from '../../../typeFiles/components/type-files-componen
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
 import { MatDialog } from '@angular/material/dialog';
 import { TypeFiles } from '../../../typeFiles/services/type-files';
+import Swal from 'sweetalert2';
 
 
 export enum DynamicContent {
@@ -102,7 +103,33 @@ export class ProjectFilesModalComponent implements OnInit {
 
  
   onDeleteFile(file: FileData): void {
-    this.fileService.deleteFile(file);
+    // Cerrar el modal para que sweetalert no quede detrás
+    this.modalRef.close();
+
+    // Mostrar sweetalert con confirmación
+    Swal.fire({
+      title: '¿Eliminar archivo?',
+      text: `¿Estás seguro de que quieres eliminar "${file.tittle}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Usuario confirmó: eliminar el archivo
+        this.fileService.deleteFile(file);
+        Swal.fire('Eliminado', 'El archivo fue eliminado correctamente', 'success');
+      } else {
+        // Usuario canceló: reabrir el modal con los datos originales
+        this.editDialog.open(ProjectFilesModalComponent, {
+          data: this.data,
+           width: '850px',
+      maxWidth: '95vw',
+        });
+      }
+    });
   }
 
   onDownloadFile(file: FileData): void {

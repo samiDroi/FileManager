@@ -141,7 +141,7 @@ func (r *FileRepository) GetFileByID(ctx context.Context, id int) (dtos.FileResp
 	return f, nil
 }
 
-func (r *FileRepository) SaveFile(ctx context.Context, req dtos.FileRequest, filename string, src io.Reader) (dtos.FileResponse, error) {
+func (r *FileRepository) SaveFile(ctx context.Context, req dtos.FileRequest, filename string, src io.Reader, userID int) (dtos.FileResponse, error) {
 	uploadPath := config.Config.UploadPath
 	if uploadPath == "" {
 		uploadPath = "./uploads"
@@ -183,8 +183,8 @@ func (r *FileRepository) SaveFile(ctx context.Context, req dtos.FileRequest, fil
 	// Agregamos RETURNING id, created_at para llenar el DTO completo
 	err = r.db.QueryRow(ctx,
 		`INSERT INTO files (tittle, path, project_id, type_id, year, created_by, updated_by) 
-         VALUES ($1, $2, $3, $4, $5, 1, 1) RETURNING id, created_at`,
-		req.Tittle, filePath, req.ProjectID, typeID, yearInt,
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`,
+		req.Tittle, filePath, req.ProjectID, typeID, yearInt, userID, userID,
 	).Scan(&newFileID, &createdAt)
 
 	// Si la BD falla, borramos el archivo físico recién creado

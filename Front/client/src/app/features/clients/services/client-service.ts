@@ -3,6 +3,7 @@ import { catchError, EMPTY, map } from 'rxjs';
 import { ClientRequest, ClientData, ClientsWithProjects } from '../../../core/domain/dtos';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import Swal from '../../../shared/utils/swal';
 
 @Injectable({
   providedIn: 'root',
@@ -89,6 +90,13 @@ export class ClientService {
           };
         });
         this.getClientsWithProjects();
+        Swal.fire({
+          icon: 'success',
+          title: 'Cliente creado',
+          text: 'El cliente se ha creado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       },
 
       error: (error) => {
@@ -111,6 +119,13 @@ export class ClientService {
             clients: updatedMap,
             loading: false
           };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Cliente actualizado',
+          text: 'El cliente se ha actualizado correctamente',
+          timer: 2000,
+          showConfirmButton: false
         });
       },
       error: (error) => {

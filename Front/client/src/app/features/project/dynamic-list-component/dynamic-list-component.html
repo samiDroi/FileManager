@@ -1,24 +1,35 @@
-@if(loading()){
-  <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
-    <p>Cargando proyectos...</p>
-  </div>
-}@else {
-  <div class="header">
-    <button class="btn-back" (click)="goBack()">
+ <div class="header">
+   
+     
+    <!-- <button class="btn-back" (click)="goBack()">
       <i class="fa fa-arrow-left"></i> Volver
-    </button>
+    </button> -->
     <h2>{{ clientName() }}</h2>
+     
     <app-create-button 
       [label]="'+ Nuevo Proyecto'" 
       (clicked)="openCreateProjectModal()">  
     </app-create-button>
   </div>
+ <app-ui-search-bar
+    placeholder="Buscar proyectos..." 
+      (search)="onSearch($event)">
+
+    </app-ui-search-bar> 
+@if(loading()){
+  <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
+    <p>Cargando proyectos...</p>
+  </div>
+}@else {
+  
 
   @if(projects().length === 0){
+    
     <div class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">
       <p>No hay proyectos para este cliente.</p>
     </div>
   }@else {
+   
     <ng-template #projectRow let-project>
       <td>
         <div class="cell-main-text">{{ project.name }}</div>

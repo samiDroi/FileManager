@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AppRoutes } from '../../../core/routes/appRoutes';
@@ -15,9 +15,7 @@ import { CreateButton } from '../../../shared/components/buttons/create-button/c
 export class SidebarComponent {
   protected readonly routes = AppRoutes.features;
   clientsList = input<ClientData[] | null>(null);
-  @Input() userData: any = null;
 
-  @Output() onLogout = new EventEmitter<void>();
   @Output() onCreateClient = new EventEmitter<void>();
 
   searchTerm = '';
@@ -30,10 +28,6 @@ export class SidebarComponent {
     return (this.clientsList() ?? []).filter(c =>
       c.name.toLowerCase().includes(term)
     );
-  }
-
-  emitLogout() {
-    this.onLogout.emit();
   }
 
   emitCreateClient() {

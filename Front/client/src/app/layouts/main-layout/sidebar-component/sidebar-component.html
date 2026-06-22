@@ -51,18 +51,6 @@
     <a routerLink="/configuracion" class="nav-item">
       <i class="fa fa-cog"></i> <span class="label">Configuración</span>
     </a>
-    
-    @if(userData) {
-      <div class="user-card">
-        <div class="user-avatar">{{ userData.username.charAt(0) }}</div>
-        <div class="user-info">
-          <span class="name">{{ userData.username }}</span>
-          <span class="email">{{ userData.email }}</span>
-        </div>
-        <button class="btn-logout" (click)="emitLogout()" title="Cerrar Sesión">
-          <i class="fa fa-sign-out"></i>
-        </button>
-      </div>
-    }
+
   </div>
 </aside>

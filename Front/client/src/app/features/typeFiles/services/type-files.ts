@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { FileTypeRequest } from '../../../core/domain/dtos/fileType';
 import { ApiRoutes } from '../../../core/routes';
+import Swal from '../../../shared/utils/swal';
 
 @Injectable({
   providedIn: 'root',
@@ -23,11 +24,17 @@ export class TypeFiles {
   createFileTypes(types: {name: string}[]): void {
     this.http.post<FileTypeRequest[]>(ApiRoutes.files.createFileTypes, { types }).subscribe({
       next: (createdTypes) => {
-        //set all the previous data and add the new types created
         this.state.update(s => ({
           ...s,
           fileTypes: [...s.fileTypes, ...createdTypes]
         }));
+        Swal.fire({
+          icon: 'success',
+          title: 'Tipos creados',
+          text: 'Los tipos de archivo se han creado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       },
       error: (err) => {
         console.error('Error al crear tipos de archivo en bloque:', err);
