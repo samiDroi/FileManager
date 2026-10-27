@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
 import { ProjectData, ProjectRequest } from '../../../core/domain/dtos';
+import Swal from '../../../shared/utils/swal';
 
 @Injectable({
   providedIn: 'root',
@@ -45,6 +46,13 @@ export class projectService {
             loading: false
           };
         });
+        Swal.fire({
+          icon: 'success',
+          title: 'Proyecto creado',
+          text: 'El proyecto se ha creado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       }
     })
   }
@@ -60,6 +68,13 @@ export class projectService {
             projects: updatedMap,
             loading: false
           };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Proyecto actualizado',
+          text: 'El proyecto se ha actualizado correctamente',
+          timer: 2000,
+          showConfirmButton: false
         });
       },
       error: (err) => {

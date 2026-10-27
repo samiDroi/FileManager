@@ -180,3 +180,31 @@ func (c *ClientRepository) GetClientByID(ctx context.Context, clientID int) (*dt
 	}
 	return &client, nil
 }
+
+func (r *ClientRepository) GetClientsWithProjects(ctx context.Context) ([]dtos.ClientWithProjectsResponse, error) {
+	q := `SELECT c.id, c.name, p.id as project_id, p.name as project_name
+		 FROM clients c
+		 JOIN projects p ON c.id = p.client_id`
+
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var clients []dtos.ClientWithProjectsResponse
+	for rows.Next() {
+		//tempory variable to scan the row data
+		var client dtos.ClientWithProjectsResponse
+		err := rows.Scan(
+			&client.ID,
+			&client.Name,
+			&client.ProjectID,
+			&client.ProjectName,
+		)
+		if err != nil {
+			return nil, err
+		}
+		clients = append(clients, client)
+	}
+	return clients, nil
+}

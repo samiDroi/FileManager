@@ -37,6 +37,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	g.DELETE(paths.File.Delete.Route, h.Delete)
 	g.GET(paths.File.Search.Route, h.Search)
 	g.GET(paths.File.Download.Route, h.Download)
+	g.GET(paths.File.Preview.Route, h.GetPreviewFile)
 	g.PUT(paths.File.Edit.Route, h.Edit)
 }
 
@@ -100,6 +101,7 @@ func (h *FileHandler) Upload(c echo.Context) error {
 	if req.ProjectID == 0 || req.Tittle == "" || req.Year == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "project_id, tittle and year are required"})
 	}
+	userSess := middlewares.GetRequestUserSession(c)
 
 	src, err := file.Open()
 	if err != nil {
@@ -111,7 +113,7 @@ func (h *FileHandler) Upload(c echo.Context) error {
 	safeFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 
 	// newFile, err := h.repo.SaveFile(c.Request().Context(), req.ProjectID, req.Tittle, req.Year, safeFileName, src)
-	newFile, err := h.repo.SaveFile(c.Request().Context(), req, safeFileName, src)
+	newFile, err := h.repo.SaveFile(c.Request().Context(), req, safeFileName, src, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -145,4 +147,16 @@ func (h *FileHandler) Edit(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, updated)
+}
+func (h *FileHandler) GetPreviewFile(c echo.Context) error {
+	id_param := c.Param("id")
+	id, err := strconv.Atoi(id_param)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	file, err := h.repo.GetFileByID(c.Request().Context(), id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, map[string]string{"error": "file not found"})
+	}
+	return c.Inline(file.Path, file.Tittle+filepath.Ext(file.Path))
 }

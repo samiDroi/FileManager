@@ -37,15 +37,17 @@ func (d Dynamic[T]) URLWithQuery(param T, q map[string]string) string {
 // --- STRUCT PARA RUTAS ESTÁNDAR ---
 
 type StandardResource struct {
-	Prefix   string
-	Index    Static
-	New      Static
-	Edit     Dynamic[int64]
-	Update   Dynamic[int64]
-	Delete   Dynamic[int64]
-	Download Dynamic[int64]
-	Search   Static
-	Upload   Static
+	Prefix       string
+	Index        Static
+	New          Static
+	Edit         Dynamic[int64]
+	Update       Dynamic[int64]
+	Delete       Dynamic[int64]
+	Download     Dynamic[int64]
+	Preview      Dynamic[int64]
+	Search       Static
+	Upload       Static
+	WithProjects Static
 }
 
 // --- FUNCIONES CONSTRUCTORAS ---
@@ -75,10 +77,15 @@ func NewResource(prefix string) StandardResource {
 			Builder: func(id int64) string { return path.Join(prefix, fmt.Sprintf("%d", id)) },
 		},
 		Search: newStatic(prefix, "/search"),
-		Upload: newStatic(prefix, "/upload"),
+		Upload:       newStatic(prefix, "/upload"),
+		WithProjects: newStatic(prefix, "/with-projects"),
 		Download: Dynamic[int64]{
 			Route:   "/:id/download",
 			Builder: func(id int64) string { return path.Join(prefix, fmt.Sprintf("%d", id), "download") },
+		},
+		Preview: Dynamic[int64]{
+			Route:   "/:id/preview",
+			Builder: func(id int64) string { return path.Join(prefix, fmt.Sprintf("%d", id), "preview") },
 		},
 	}
 }

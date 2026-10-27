@@ -24,7 +24,7 @@ export class FormComponent implements OnInit{
 
   projectForm = this.fb.group({
     name: [this.data?.project?.name || '', Validators.required],
-    client_id: [this.data?.project?.client_id || null, Validators.required]
+    client_id: [this.data?.preselectedClientId || this.data?.project?.client_id || null, Validators.required]
   })
 
   ngOnInit(): void {

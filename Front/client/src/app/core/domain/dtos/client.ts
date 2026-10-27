@@ -12,3 +12,10 @@ export interface ClientData {
   count_projects?: number;
   created_at: string; // ISO date string
 }
+export interface ClientsWithProjects{
+  id: number;
+  name: string;
+  projectId: number;
+  projectName: string;
+
+}

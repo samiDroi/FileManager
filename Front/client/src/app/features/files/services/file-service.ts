@@ -5,14 +5,15 @@ import { FileRequest, FileData, FileUpdateRequest } from '../../../core';
 import { FileType } from '../../../core/domain/models';
 import { Observable, catchError, EMPTY, map, tap } from 'rxjs';
 import { FileTypeRequest } from '../../../core/domain/dtos/fileType';
-import Swal from 'sweetalert2';
+import Swal from '../../../shared/utils/swal';
+import { projectService } from '../../project/services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FileService {
   private http = inject(HttpClient);
-  
+  private projectService = inject(projectService);
   state = signal({
     filesByProject: new Map<number, FileData[]>(),
     fileTypes: [] as FileTypeRequest[],
@@ -93,18 +94,18 @@ export class FileService {
   // }
 //create file
 async deleteFile(file: FileData): Promise<void> {
-    const result = await Swal.fire({
-      title: '¿Eliminar archivo?',
-      text: `Se eliminará "${file.tittle}" permanentemente`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-    });
+    // const result = await Swal.fire({
+    //   title: '¿Eliminar archivo?',
+    //   text: `Se eliminará "${file.tittle}" permanentemente`,
+    //   icon: 'warning',
+    //   showCancelButton: true,
+    //   confirmButtonText: 'Sí, eliminar',
+    //   cancelButtonText: 'Cancelar',
+    //   confirmButtonColor: '#d33',
+    //   cancelButtonColor: '#3085d6',
+    // });
 
-    if (!result.isConfirmed) return;
+    // if (!result.isConfirmed) return;
 
     this.http.delete(ApiRoutes.files.delete(file.id)).pipe(
       catchError(error => {
@@ -121,6 +122,29 @@ async deleteFile(file: FileData): Promise<void> {
           updatedMap.set(projectIdKey, currentFiles.filter(f => f.id !== file.id));
           return { ...s, filesByProject: updatedMap, loading: false };
         });
+         this.projectService.state.update(s => {
+          const updatedMap = new Map(s.projects);
+          const projectIdKey = file.project_id ?? 0;  
+          const project = updatedMap.get(projectIdKey); // ← usar la key ya sanitizada
+
+          if (project && project.count_files !== null) {
+              updatedMap.set(projectIdKey, {
+                  ...project,
+                  //restar 1 archivo al ser borrado
+                  count_files: (project.count_files ?? 0) - 1
+              });
+          }
+          
+        return { ...s, projects: updatedMap };
+         });
+        Swal.fire({
+          icon: 'success',
+          title: 'Archivo eliminado',
+          text: 'El archivo se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        this
       }
     })
   }
@@ -142,9 +166,9 @@ uploadFile(fileRequest: FileRequest) {
 
     // 1. Condición vital: Solo agregamos el project_id si viene en la petición
     // Si viene del formulario global (sin proyecto), simplemente no se envía este dato al backend
-    if (fileRequest.project_id !== undefined && fileRequest.project_id !== null) {
-      formData.append('project_id', fileRequest.project_id.toString());
-    }
+    // if (fileRequest.project_id !== undefined && fileRequest.project_id !== null) {
+    //   formData.append('project_id', fileRequest.project_id.toString());
+    // }
 
     this.http.post<FileData>(ApiRoutes.files.upload, formData).pipe(
       catchError(error => {
@@ -158,9 +182,6 @@ uploadFile(fileRequest: FileRequest) {
           const fileType = s.fileTypes.find(ft => ft.id === fileRequest.type_id);
           const resolvedFile = fileType ? { ...newFile, file_type: fileType.name } : newFile;
           const updatedMap = new Map(s.filesByProject);
-          // 2. Usamos 0 (o el ID que tú prefieras) para agrupar en el estado 
-          // a los archivos que NO pertenecen a ningún proyecto.
-          // Si tiene ID se guarda en su llave, si no, se guarda en el cajón "0".
           const projectIdKey = fileRequest.project_id ?? 0;
           const currentFiles = updatedMap.get(projectIdKey) ?? [];
           updatedMap.set(projectIdKey, [...currentFiles, resolvedFile]);
@@ -171,6 +192,24 @@ uploadFile(fileRequest: FileRequest) {
             loading: false
           };
         })
+          this.projectService.state.update(s => {
+        const updatedMap = new Map(s.projects);
+        const project = updatedMap.get(projectId);
+        if (project) {
+            updatedMap.set(projectId, {
+                ...project,
+                count_files: (project.count_files ?? 0) + 1
+            });
+        }
+        return { ...s, projects: updatedMap };
+    });
+        Swal.fire({
+          icon: 'success',
+          title: 'Archivo subido',
+          text: 'El archivo se ha subido correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
       }
     });
   }
@@ -252,6 +291,13 @@ uploadFile(fileRequest: FileRequest) {
             }
           }
           return { ...s, filesByProject: updatedMap };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Archivo actualizado',
+          text: 'El archivo se ha actualizado correctamente',
+          timer: 2000,
+          showConfirmButton: false
         });
       }
     });

@@ -78,7 +78,7 @@
       [text]="isEdit() ? 'Guardar Cambios' : 'Subir Archivo'" 
       type="submit"
       [isDisabled]="form.invalid || (!isEdit() && !selectedFile()) || isLoading()"
-      (clicked)="onSubmitFile()"
+      
     ></app-confirm-button>
   </div>
 </form>

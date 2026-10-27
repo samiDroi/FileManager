@@ -5,6 +5,7 @@ import { MatDialogClose } from '@angular/material/dialog';
 import { ConfirmButtonComponent, FormInput, } from '../../../shared/components';
 import { AuthService } from '../../auth-service';
 import { AppRoutes } from '../../../core/routes/appRoutes';
+import Swal from '../../../shared/utils/swal';
 
 
 @Component({
@@ -33,11 +34,16 @@ export class RegisterComponent {
     }
     
     const formData = this.registerForm.getRawValue();
-    console.log('Datos listos para enviar al backend en Go:', formData);
     
     this.authService.register(formData).subscribe({
       next: (response) => {
-        console.log('Registro exitoso:', response);
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario creado',
+          text: 'El usuario se ha registrado correctamente',
+          timer: 2000,
+          showConfirmButton: false
+        });
         this.router.navigate([AppRoutes.auth.login]);
       },
       error: (error) => {

@@ -7,11 +7,13 @@ import { CreateButton } from '../../../../shared/components/buttons/create-butto
 // Importa tus componentes (rutas omitidas por brevedad)
 import { ListFilesModal } from './list-files-modal/list-files-modal';
 import { FileFormComponent } from '../files-component/file-form-component/file-form-component';
+import { FilePreviewComponent } from '../file-preview-component/file-preview-component';
 import { DragDropZoneComponent } from '../drag-drop-zone/drag-drop-zone';
 import { FormComponent } from '../../../typeFiles/components/type-files-component/form-component/form-component';
 import { UiSearchBarComponent } from '../../../../shared/components/search-bar/ui-search-bar-component';
 import { MatDialog } from '@angular/material/dialog';
 import { TypeFiles } from '../../../typeFiles/services/type-files';
+import Swal from 'sweetalert2';
 
 
 export enum DynamicContent {
@@ -44,7 +46,7 @@ export class ProjectFilesModalComponent implements OnInit {
   projectId = computed(() => this.data?.project?.id);
   selectedFile = signal<File | null>(null);
   files = computed(() => this.fileService.state().filesByProject.get(this.projectId()) ?? []);
-  fileTypes = computed(() => this.fileService.state().fileTypes);
+  fileTypes = computed(() => this.fileTypeService.state().fileTypes);
   loading = computed(() => this.fileService.state().loading);
   
   ngOnInit(): void {
@@ -86,13 +88,48 @@ export class ProjectFilesModalComponent implements OnInit {
     });
   }
 
+  onViewFile(file: FileData): void {
+    this.editDialog.open(FilePreviewComponent, {
+      data: file,
+      width: '95vw',
+      height: '95vh',
+      panelClass: 'file-preview-dialog'
+    });
+  }
+
   onClose(): void {
     this.modalRef.close();
   }
 
  
   onDeleteFile(file: FileData): void {
-    this.fileService.deleteFile(file);
+    // Cerrar el modal para que sweetalert no quede detrás
+    this.modalRef.close();
+
+    // Mostrar sweetalert con confirmación
+    Swal.fire({
+      title: '¿Eliminar archivo?',
+      text: `¿Estás seguro de que quieres eliminar "${file.tittle}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Usuario confirmó: eliminar el archivo
+        this.fileService.deleteFile(file);
+        Swal.fire('Eliminado', 'El archivo fue eliminado correctamente', 'success');
+      } else {
+        // Usuario canceló: reabrir el modal con los datos originales
+        this.editDialog.open(ProjectFilesModalComponent, {
+          data: this.data,
+           width: '850px',
+      maxWidth: '95vw',
+        });
+      }
+    });
   }
 
   onDownloadFile(file: FileData): void {

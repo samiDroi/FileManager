@@ -46,20 +46,38 @@ export class FileFormComponent implements OnInit {
     year: [this.currentYear, Validators.required],
     type_id: [null as number | null, Validators.required]
   });
-
-  constructor() {
-    this.form.get('sameName')?.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((isChecked) => {
-        const titleControl = this.form.get('fileTitle');
-        if (isChecked) {
-          titleControl?.disable();
-          titleControl?.setValue('');
+constructor() {
+  this.form.get('sameName')?.valueChanges
+    .pipe(takeUntilDestroyed())
+    .subscribe((isChecked) => {
+      const titleControl = this.form.get('fileTitle');
+      if (isChecked) {
+        titleControl?.disable();
+        const file = this.selectedFile();
+        if (file) {
+          const nameWithoutExtension = file.name.split('.').slice(0, -1).join('.');
+          titleControl?.setValue(nameWithoutExtension);
         } else {
-          titleControl?.enable();
+          titleControl?.setValue('');
         }
-      });
-  }
+      } else {
+        titleControl?.enable();
+      }
+    });
+}
+  // constructor() {
+  //   this.form.get('sameName')?.valueChanges
+  //     .pipe(takeUntilDestroyed())
+  //     .subscribe((isChecked) => {
+  //       const titleControl = this.form.get('fileTitle');
+  //       if (isChecked) {
+  //         titleControl?.disable();
+  //         titleControl?.setValue('');
+  //       } else {
+  //         titleControl?.enable();
+  //       }
+  //     });
+  // }
 
   ngOnInit(): void {
     if (this.isEdit() && this.dialogData?.file) {
@@ -96,13 +114,12 @@ export class FileFormComponent implements OnInit {
     } else if (this.selectedFile()) {
       const fileRequest: FileRequest = {
         file: this.selectedFile()!,
-        project_id: formValue.projectId ?? undefined,
+        project_id: formValue.projectId ?? this.projectId() ?? undefined,
         tittle: formValue.fileTitle,
         year: formValue.year,
         type_id: formValue.type_id
       };
-      this.fileService.uploadFile(fileRequest);
-      this.dialogRef?.close(true);
+      this.fileSubmit.emit(fileRequest);
     }
 
     this.isLoading.set(false);

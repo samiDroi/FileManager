@@ -27,6 +27,19 @@ var Auth = struct {
 	changePwd   Static
 }{Prefix: ""}
 
+// Estadísticas para mostrar en gráficos
+var Stats = struct {
+	Prefix            string
+	GetFileTypesStats Static
+}{
+	Prefix: "/stats", GetFileTypesStats: newStatic("/stats", "/file-types")}
+var ClientsSidebar = struct {
+	Prefix string
+	Index  Static
+}{
+	Prefix: "/clients-projects",
+	Index:  newStatic("/clients-projects", ""),
+}
 var Dashboard = struct {
 	Prefix   string
 	Index    Static
@@ -51,4 +64,6 @@ func init() {
 		Route:   "/project/:id",
 		Builder: func(ids []int) string { return path.Join(File.Prefix, "/project/:id") },
 	}
+	//
+	Stats.GetFileTypesStats = newStatic(Stats.Prefix, "/file-types")
 }

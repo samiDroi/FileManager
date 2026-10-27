@@ -20,6 +20,7 @@ export class ListFilesModal {
   @Output() downloadFile = new EventEmitter<FileData>()
   @Output() deleteFile = new EventEmitter<FileData>()
   @Output() editFile = new EventEmitter<FileData>()
+  @Output() viewFile = new EventEmitter<FileData>()
 
   onDownloadFile(file: FileData): void {
     this.downloadFile.emit(file);
@@ -29,5 +30,8 @@ export class ListFilesModal {
   }
   onDeleteFile(file: FileData): void {
     this.deleteFile.emit(file);
+  }
+  onViewFile(file: FileData): void {
+    this.viewFile.emit(file);
   }
 }
