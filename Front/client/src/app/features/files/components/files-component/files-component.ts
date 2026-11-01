@@ -9,7 +9,7 @@ import { FileFormComponent } from './file-form-component/file-form-component';
 import { FilePreviewComponent } from '../file-preview-component/file-preview-component';
 import { DragDropZoneComponent } from '../drag-drop-zone/drag-drop-zone';
 import { ProjectFilesModalComponent } from '../project-files-modal';
-import { WizardModal } from '../../../../shared/components';
+import { EmptyStateComponent, WizardModal } from '../../../../shared/components';
 import { WizardModalComponent } from './wizard-modal-component/wizard-modal-component';
 
 import { projectService } from '../../../project/services';
@@ -22,7 +22,7 @@ enum View {
 }
 @Component({
   selector: 'app-files-component',
-  imports: [ListFilesModal,CreateButton,UiSearchBarComponent],
+  imports: [ListFilesModal, CreateButton, UiSearchBarComponent, EmptyStateComponent],
   templateUrl: './files-component.html',
   styleUrl: './files-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +32,7 @@ export class FilesComponent implements OnInit {
   private projectService = inject(projectService);
   private fileTypeService = inject(TypeFiles);
   modalRef = inject(MatDialog);
-  isLoading = signal(false);
+  isLoading = computed(() => this.filesService.state().loading);
   allFiles = this.filesService.allFiles;
   actualView = signal<View>(View.DRAG);
   selectedFile = signal<File | null>(null);

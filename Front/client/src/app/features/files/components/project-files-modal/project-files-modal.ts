@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { TopbarTitleService } from '../../../../core/services';
 import { NgTemplateOutlet } from '@angular/common'; // <-- Import corregido
 import { FileService } from '../../services';
 import { FileRequest, FileData, ProjectData } from '../../../../core';
@@ -35,6 +36,8 @@ export class ProjectFilesModalComponent implements OnInit {
   private fileService = inject(FileService);
   private modalRef = inject(MatDialogRef<ProjectFilesModalComponent>);
   private editDialog = inject(MatDialog);
+  private topbarTitleService = inject(TopbarTitleService);
+  private destroyRef = inject(DestroyRef);
   protected data = inject(MAT_DIALOG_DATA);
   private fileTypeService = inject(TypeFiles);
   // 1. Exponemos el enum al template para usarlo en el @switch
@@ -50,11 +53,24 @@ export class ProjectFilesModalComponent implements OnInit {
   loading = computed(() => this.fileService.state().loading);
   
   ngOnInit(): void {
-    const projectId = this.data?.project?.id;
+    const project = this.data?.project;
+    const projectId = project?.id;
+
+    if (project) {
+      this.topbarTitleService.setProjectBreadcrumb({
+        clientName: project.client_name ?? '',
+        projectName: project.name ?? '',
+      });
+    }
+
     if (projectId) {
       this.fileService.getByProjectId(projectId);
       this.fileTypeService.getFileTypes();
     }
+  }
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.topbarTitleService.clearProjectBreadcrumb());
   }
 
   // --- MÉTODOS DE NAVEGACIÓN Y ESTADO ---

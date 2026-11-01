@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"server/internal/domain/dtos"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/store/repository"
 	"strconv"
 
@@ -26,12 +25,11 @@ func NewUserHandler(db *pgxpool.Pool) *UserHandler {
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewUserHandler(db)
-	g := e.Group(paths.User.Prefix, middlewares.IsAuthenticated)
-	g.GET(paths.User.Index.Route, h.GetAll)
-	g.GET(paths.User.Search.Route, h.Search)
-	g.GET(paths.User.Delete.Route, h.GetByID)
-	g.PUT(paths.User.Update.Route, h.Update)
-	g.DELETE(paths.User.Delete.Route, h.Delete)
+	e.GET("/users", h.GetAll, middlewares.IsAuthenticated)
+	e.GET("/users/search", h.Search, middlewares.IsAuthenticated)
+	e.GET("/users/:id", h.GetByID, middlewares.IsAuthenticated)
+	e.PUT("/users/edit/:id", h.Update, middlewares.IsAuthenticated)
+	e.DELETE("/users/:id", h.Delete, middlewares.IsAuthenticated)
 }
 
 func (h *UserHandler) Search(c echo.Context) error {
@@ -93,4 +91,3 @@ func (h *UserHandler) Delete(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "User deleted successfully"})
 }
-

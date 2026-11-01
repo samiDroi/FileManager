@@ -13,9 +13,19 @@
   </app-ui-search-bar>
 </div>
 
-<app-list-projects 
-  [projectsList]="projectsList()" 
-  [isLoading]="loading()"
-  (editProject)="openEditProjectModal($event)"
-  (goToFiles)="openFilesModal($event)">
-</app-list-projects>
+@if (projectsList().length === 0 && !loading()) {
+  <app-empty-state
+    imagenUrl="/images/Folder.svg"
+    titulo="Aún no hay proyectos"
+    subtitulo="Crea tu primer proyecto para organizarte."
+    textoBoton="Nuevo Proyecto"
+    (buttonClick)="openCreateProjectModal()">
+  </app-empty-state>
+} @else {
+  <app-list-projects
+    [projectsList]="projectsList()"
+    [isLoading]="loading()"
+    (editProject)="openEditProjectModal($event)"
+    (goToFiles)="openFilesModal($event)">
+  </app-list-projects>
+}

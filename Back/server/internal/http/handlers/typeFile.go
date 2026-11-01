@@ -5,7 +5,6 @@ import (
 	"server/internal/domain/dtos"
 	"server/internal/domain/models"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/store/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,10 +25,9 @@ func NewTypeFileHandler(db *pgxpool.Pool) *TypeFileHandler {
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewTypeFileHandler(db)
-	g := e.Group(paths.TypeFile.Prefix)
-	g.Use(middlewares.IsAuthenticated)
-	g.GET(paths.TypeFile.Index.Route, h.GetAllTypeFiles)
-	g.POST(paths.TypeFile.New.Route, h.CreateTypeFile)
+
+	e.GET("/type-files", h.GetAllTypeFiles, middlewares.IsAuthenticated)
+	e.POST("/type-files/new", h.CreateTypeFile, middlewares.IsAuthenticated)
 }
 
 func (h *TypeFileHandler) GetAllTypeFiles(ctx echo.Context) error {

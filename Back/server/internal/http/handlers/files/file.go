@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"server/internal/domain/dtos"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/store/repository"
 	"strconv"
 	"time"
@@ -29,16 +28,15 @@ func NewFileHandler(db *pgxpool.Pool) *FileHandler {
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewFileHandler(db)
-	g := e.Group("/files")
-	g.Use(middlewares.IsAuthenticated)
-	g.GET(paths.File.Index.Route, h.GetAll)
-	g.GET(paths.FileSpecials.GetByIds.Route, h.GetAllByProject)
-	g.POST(paths.File.Upload.Route, h.Upload)
-	g.DELETE(paths.File.Delete.Route, h.Delete)
-	g.GET(paths.File.Search.Route, h.Search)
-	g.GET(paths.File.Download.Route, h.Download)
-	g.GET(paths.File.Preview.Route, h.GetPreviewFile)
-	g.PUT(paths.File.Edit.Route, h.Edit)
+
+	e.GET("/files", h.GetAll, middlewares.IsAuthenticated)
+	e.GET("/files/project/:id", h.GetAllByProject, middlewares.IsAuthenticated)
+	e.POST("/files/upload", h.Upload, middlewares.IsAuthenticated)
+	e.DELETE("/files/:id", h.Delete, middlewares.IsAuthenticated)
+	e.GET("/files/search", h.Search, middlewares.IsAuthenticated)
+	e.GET("/files/:id/download", h.Download, middlewares.IsAuthenticated)
+	e.GET("/files/:id/preview", h.GetPreviewFile, middlewares.IsAuthenticated)
+	e.PUT("/files/edit/:id", h.Edit, middlewares.IsAuthenticated)
 }
 
 func (h *FileHandler) GetAll(c echo.Context) error {

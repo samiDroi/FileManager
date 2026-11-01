@@ -8,7 +8,7 @@
 
   <main class="layout-main">
     <header class="topbar">
-      <h2>Bienvenido de nuevo</h2>
+      <h2>{{ pageTitle() }}</h2>
       @let user = currentUser();
       @if (user) {
         <div class="user-strip">

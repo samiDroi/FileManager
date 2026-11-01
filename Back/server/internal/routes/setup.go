@@ -6,6 +6,7 @@ import (
 	"server/internal/http/handlers/clients"
 	"server/internal/http/handlers/files"
 	"server/internal/http/handlers/projects"
+	"server/internal/http/handlers/summary"
 	"server/internal/http/handlers/users"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,4 +22,5 @@ func SetupRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	files.RegisterRoutes(e, db)
 	users.RegisterRoutes(e, db)
 	handlers.RegisterRoutes(e, db)
+	summary.RegisterRoutes(e, db)
 }

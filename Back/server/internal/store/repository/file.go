@@ -52,7 +52,7 @@ func toPtrSlice[T any](slice []T) []*T {
 }
 
 func (r *FileRepository) GetAllFiles(ctx context.Context) ([]dtos.FileResponse, error) {
-	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_by, f.updated_by, f.created_at,
+	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_at,
 			  COALESCE(p.name, '') as project_name,
 			  COALESCE(ft.name, '') as file_type
 		  FROM files f
@@ -74,6 +74,7 @@ func (r *FileRepository) GetAllFiles(ctx context.Context) ([]dtos.FileResponse, 
 			&f.Tittle,
 			&f.Path,
 			&f.ProjectID,
+			&f.TypeID,
 			&f.Year,
 			&createdAt,
 			&f.ProjectName,
@@ -84,6 +85,9 @@ func (r *FileRepository) GetAllFiles(ctx context.Context) ([]dtos.FileResponse, 
 		}
 		f.CreatedAt = utils.ToCustomTime(createdAt)
 		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return files, nil
 }

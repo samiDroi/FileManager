@@ -2,7 +2,6 @@
 package summary
 
 import (
-	"server/internal/paths"
 	"server/internal/store/repository/summary"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,10 +13,9 @@ type StatsHandler struct {
 	repo *summary.StatsRepository
 }
 
-func RegisterRoutes(db *pgxpool.Pool, e *echo.Echo) {
+func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewStatsHandler(db)
-	g := e.Group(paths.Stats.Prefix)
-	g.GET(paths.Stats.GetFileTypesStats.Route, h.GetFileTypesStats)
+	e.GET("/stats/file-types", h.GetFileTypesStats)
 }
 func NewStatsHandler(db *pgxpool.Pool) *StatsHandler {
 	return &StatsHandler{

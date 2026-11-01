@@ -13,10 +13,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormComponent } from '../projects-component/form-component/form-component';
 import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
 import { UiSearchBarComponent } from '../../../shared/components/search-bar/ui-search-bar-component';
+import { EmptyStateComponent } from '../../../shared/components';
 
 @Component({
   selector: 'app-dynamic-list',
-  imports: [UiTableComponent, EditButton, CreateButton,UiSearchBarComponent],
+  imports: [UiTableComponent, EditButton, CreateButton, UiSearchBarComponent, EmptyStateComponent],
   templateUrl: './dynamic-list-component.html',
   styleUrl: './dynamic-list-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,7 +73,6 @@ export class DynamicListComponent {
           name: newProject.name,
           client_id: newProject.client_id
         });
-        this.projectService.getAll();
       }
     });
   }
@@ -86,7 +86,6 @@ export class DynamicListComponent {
     dialogRef.afterClosed().subscribe(updated => {
       if (updated) {
         this.projectService.onUpdate(updated.id, updated);
-        this.projectService.getAll();
       }
     });
   }

@@ -14,6 +14,9 @@ import { projectService } from '../../project/services';
 export class FileService {
   private http = inject(HttpClient);
   private projectService = inject(projectService);
+  private dataVersion = 0;
+  private searchRequestId = 0;
+  private projectRequestIds = new Map<number, number>();
   state = signal({
     filesByProject: new Map<number, FileData[]>(),
     fileTypes: [] as FileTypeRequest[],
@@ -25,6 +28,26 @@ export class FileService {
       .flat()
       .filter(file => file && file.id !== undefined)
   );
+
+  private beginSearchRequest(): () => boolean {
+    const version = this.dataVersion;
+    const requestId = ++this.searchRequestId;
+
+    return () => version === this.dataVersion && requestId === this.searchRequestId;
+  }
+
+  private beginProjectRequest(projectId: number): () => boolean {
+    const version = this.dataVersion;
+    const requestId = (this.projectRequestIds.get(projectId) ?? 0) + 1;
+    this.projectRequestIds.set(projectId, requestId);
+
+    return () => version === this.dataVersion && this.projectRequestIds.get(projectId) === requestId;
+  }
+
+  private invalidateLoads(): void {
+    this.dataVersion++;
+    this.searchRequestId++;
+  }
 
   // getFileTypes(): void {
   //   this.http.get<FileTypeRequest[]>(ApiRoutes.files.getFileTypes()).subscribe({
@@ -53,10 +76,13 @@ export class FileService {
   // }
 
   getByProjectId(projectId: number): void {
+    const isCurrentRequest = this.beginProjectRequest(projectId);
     this.state.update(s => ({ ...s, loading: true }));
     
     this.http.get<FileData[]>(ApiRoutes.files.getByProjectId(projectId)).subscribe({
       next: (files) => {
+        if (!isCurrentRequest()) return;
+
         this.state.update(s => {
           const updatedMap = new Map(s.filesByProject);
           updatedMap.set(projectId, files);
@@ -65,7 +91,9 @@ export class FileService {
       },
       error: (err) => {
         console.error('Error al obtener archivos:', err);
-        this.state.update(s => ({ ...s, loading: false }));
+        if (isCurrentRequest()) {
+          this.state.update(s => ({ ...s, loading: false }));
+        }
       }
     });
   
@@ -115,6 +143,7 @@ async deleteFile(file: FileData): Promise<void> {
       })
     ).subscribe({
       next: () => {
+        this.invalidateLoads();
         this.state.update(s => {
           const updatedMap = new Map(s.filesByProject);
           const projectIdKey = file.project_id ?? 0;
@@ -178,6 +207,7 @@ uploadFile(fileRequest: FileRequest) {
       })
     ).subscribe({
       next: (newFile) => {
+        this.invalidateLoads();
         this.state.update(s => {
           const fileType = s.fileTypes.find(ft => ft.id === fileRequest.type_id);
           const resolvedFile = fileType ? { ...newFile, file_type: fileType.name } : newFile;
@@ -239,6 +269,9 @@ uploadFile(fileRequest: FileRequest) {
   //   });
   // }
   onSearch(query: string) {
+    const isCurrentRequest = this.beginSearchRequest();
+    this.state.update(s => ({ ...s, loading: true }));
+
     this.http.get<FileData[]>(ApiRoutes.files.search(query)).pipe(
       map(files => {
         const filesMap = new Map<number, FileData[]>();
@@ -258,10 +291,15 @@ uploadFile(fileRequest: FileRequest) {
       }),
       catchError(error => {
         console.error('Error al buscar archivos:', error);
+        if (isCurrentRequest()) {
+          this.state.update(s => ({ ...s, loading: false }));
+        }
         return EMPTY;
       })
     ).subscribe(filesMap => {
-      this.state.update(s => ({ ...s, filesByProject: filesMap }));
+      if (!isCurrentRequest()) return;
+
+      this.state.update(s => ({ ...s, filesByProject: filesMap, loading: false }));
     });
   }
   editFile(fileId: number, data: FileUpdateRequest): void {
@@ -278,6 +316,7 @@ uploadFile(fileRequest: FileRequest) {
       })
     ).subscribe({
       next: (updatedFile) => {
+        this.invalidateLoads();
         this.state.update(s => {
           const updatedMap = new Map(s.filesByProject);
           for (const [key, files] of updatedMap) {

@@ -1,6 +1,3 @@
-import { features } from "process";
-import { rootCertificates } from "tls";
-
 export const AppRoutes = {
     //module auth routes
     auth: {

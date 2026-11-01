@@ -8,10 +8,11 @@ import { ClientFormComponent } from './client-form-component/client-form-compone
 import { FormComponent } from '../../../project/projects-component/form-component/form-component';
 import { ClientData } from '../../../../core/domain/dtos';
 import { projectService } from '../../../project/services/project-service';
+import { EmptyStateComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-clients-component',
-  imports: [ListClientsComponent, UiSearchBarComponent, CreateButton],
+  imports: [ListClientsComponent, UiSearchBarComponent, CreateButton, EmptyStateComponent],
   templateUrl: './clients-component.html',
   styleUrl: './clients-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,13 +6,13 @@
   <div class="sidebar-section">
     <span class="section-label">Vistas Globales</span>
     <nav class="nav-menu">
-      <a [routerLink]="[routes.files]" class="nav-item">
+      <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item">
         <i class="fa fa-file"></i> <span class="label">Todos los Archivos</span>
       </a>
-      <a [routerLink]="[routes.projects]" class="nav-item">
+      <a [routerLink]="[routes.projects]" routerLinkActive="active" class="nav-item">
         <i class="fa fa-folder-open"></i> <span class="label">Todos los Proyectos</span>
       </a>
-      <a [routerLink]="[routes.clients]" class="nav-item">
+      <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
         <i class="fa fa-briefcase"></i> <span class="label">Todos los Clientes</span>
       </a>
     </nav>
@@ -37,8 +37,8 @@
     
 
     <div class="clients-scroll-area">
-      @for (client of filteredClients; track $index) {
-        <div class="client-item" [routerLink]="['/overview/client', client.id]">
+      @for (client of filteredClients; track client.id) {
+        <div class="client-item" [routerLink]="['/overview/client', client.id]" routerLinkActive="active">
           <div class="client-summary">
             <i class="fa fa-building"></i> <span>{{ client.name }}</span>
           </div>

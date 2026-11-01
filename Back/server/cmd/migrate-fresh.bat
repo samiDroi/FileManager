@@ -1,6 +1,10 @@
 @echo off
+setlocal
 REM Migrate Fresh para PostgreSQL
 REM Uso: migrate-fresh.bat
+
+REM Ubicarse en Back/server sin importar desde donde se ejecute
+cd /d "%~dp0.."
 
 echo.
 echo ========================================
@@ -8,25 +12,31 @@ echo  EJECUTANDO MIGRATE:FRESH
 echo ========================================
 echo.
 
-REM Obtener password si no esta definido
-set /p DB_PASSWORD:"Ingresa el password de PostgreSQL (presiona Enter si esta vacio): "
+set "DB_PASSWORD="
+set /p DB_PASSWORD=Ingresa el password de PostgreSQL: 
 
-REM Construir connection string
-set DB_CONN=postgresql://postgres:%DB_PASSWORD%@localhost:5432/FileManagerDB
+set "DB_CONN=host=localhost port=5432 user=postgres password=%DB_PASSWORD% dbname=FileManagerDB sslmode=disable"
+
+where goose >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: goose no encontrado en PATH
+    pause
+    exit /b 1
+)
 
 echo.
-echo 1. Eliminando todas las tablas...
-psql %DB_CONN% -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
-if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Fallo al recrear esquema
+echo 1. Revirtiendo todas las migraciones...
+goose postgres "%DB_CONN%" -dir=db/migrations reset
+if errorlevel 1 (
+    echo ERROR: Fallo al revertir migraciones
     pause
     exit /b 1
 )
 
 echo.
 echo 2. Ejecutando migraciones...
-goose -dir=db/migrations %DB_CONN% up
-if %ERRORLEVEL% NEQ 0 (
+goose postgres "%DB_CONN%" -dir=db/migrations up
+if errorlevel 1 (
     echo ERROR: Fallo al ejecutar migraciones
     pause
     exit /b 1
@@ -38,3 +48,4 @@ echo  MIGRATE:FRESH COMPLETADO
 echo ========================================
 echo.
 pause
+endlocal

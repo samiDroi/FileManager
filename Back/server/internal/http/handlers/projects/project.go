@@ -6,7 +6,6 @@ import (
 	"server/internal/domain/dtos"
 	"server/internal/domain/models"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/store/repository"
 	"server/internal/utils"
 	"strconv"
@@ -29,11 +28,10 @@ func NewProjectHandler(db *pgxpool.Pool) *projectHandler {
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewProjectHandler(db)
-	g := e.Group(paths.Project.Prefix, middlewares.IsAuthenticated)
-	g.GET(paths.Project.Index.Route, h.GetAll)
-	g.GET(paths.Project.Search.Route, h.Search)
-	g.POST(paths.Project.New.Route, h.Create)
-	g.PUT(paths.Project.Update.Route, h.Update)
+	e.GET("/project", h.GetAll, middlewares.IsAuthenticated)
+	e.GET("/project/search", h.Search, middlewares.IsAuthenticated)
+	e.POST("/project/new", h.Create, middlewares.IsAuthenticated)
+	e.PUT("/project/edit/:id", h.Update, middlewares.IsAuthenticated)
 }
 
 func (h *projectHandler) GetAll(c echo.Context) error {

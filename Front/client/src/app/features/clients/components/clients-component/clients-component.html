@@ -13,10 +13,20 @@
   </app-ui-search-bar>
 </div>
 
-<app-list-clients 
-  [clients]="clientsList()" 
-  [isLoading]="loading()"
-  (createClient)="openCreateClientModal()"
-  (editClient)="openEditClientModal($event)"
-  (createproject)="openCreateProjectModal($event)">
-</app-list-clients>
+@if (clientsList().length === 0 && !loading()) {
+  <app-empty-state
+    imagenUrl="/images/Search.svg"
+    titulo="No tienes clientes registrados"
+    subtitulo="Añade un cliente para empezar a trabajar."
+    textoBoton="Nuevo Cliente"
+    (buttonClick)="openCreateClientModal()">
+  </app-empty-state>
+} @else {
+  <app-list-clients
+    [clients]="clientsList()"
+    [isLoading]="loading()"
+    (createClient)="openCreateClientModal()"
+    (editClient)="openEditClientModal($event)"
+    (createproject)="openCreateProjectModal($event)">
+  </app-list-clients>
+}

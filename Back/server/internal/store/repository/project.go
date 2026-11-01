@@ -31,7 +31,7 @@ func (r *ProjectRepository) GetAllProjects(ctx context.Context) ([]dtos.ProjectR
 	}
 	defer rows.Close()
 
-	var projects []dtos.ProjectResponse
+	projects := make([]dtos.ProjectResponse, 0)
 	for rows.Next() {
 		var p dtos.ProjectResponse
 		var createdAt time.Time
@@ -65,7 +65,7 @@ func (r *ProjectRepository) Search(ctx context.Context, searchParam string) ([]d
 	}
 	defer rows.Close()
 
-	var projects []dtos.ProjectResponse
+	projects := make([]dtos.ProjectResponse, 0)
 	for rows.Next() {
 		var p dtos.ProjectResponse
 		var createdAt time.Time

@@ -5,7 +5,6 @@ import (
 	"server/internal/domain/dtos"
 	"server/internal/domain/models"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/store/repository"
 	"strconv"
 
@@ -28,14 +27,12 @@ func NewClientHandler(db *pgxpool.Pool) *ClientHandler {
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewClientHandler(db)
 
-	g := e.Group(paths.Client.Prefix)
-	g.Use(middlewares.IsAuthenticated)
-	g.GET(paths.Client.Index.Route, h.GetAll)
-	g.GET(paths.Client.Search.Route, h.Search)
-	g.POST(paths.Client.New.Route, h.Create)
-	g.PUT(paths.Client.Edit.Route, h.Edit)
-	g.DELETE(paths.Client.Delete.Route, h.Delete)
-	g.GET(paths.Client.WithProjects.Route, h.GetClientsWithProjects)
+	e.GET("/client", h.GetAll, middlewares.IsAuthenticated)
+	e.GET("/client/search", h.Search, middlewares.IsAuthenticated)
+	e.POST("/client/new", h.Create, middlewares.IsAuthenticated)
+	e.PUT("/client/edit/:id", h.Edit, middlewares.IsAuthenticated)
+	e.DELETE("/client/:id", h.Delete, middlewares.IsAuthenticated)
+	e.GET("/client/with-projects", h.GetClientsWithProjects, middlewares.IsAuthenticated)
 }
 
 func (h *ClientHandler) GetAll(c echo.Context) error {

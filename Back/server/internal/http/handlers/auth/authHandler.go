@@ -6,7 +6,6 @@ import (
 	"server/internal/domain/models"
 	"server/internal/http/api"
 	"server/internal/http/middlewares"
-	"server/internal/paths"
 	"server/internal/services"
 	"server/internal/store/repository"
 
@@ -29,20 +28,14 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	svc := services.NewAuthService(repo)
 	h := &AuthHandler{service: svc}
 
-	// B. Agrupamos y definimos las rutas como a ti te gusta
-	g := e.Group(paths.Auth.Prefix) // o usar tu paths.Auth.Prefix
-
-	// Si tuvieras middlewares, van aquí: g.Use(middleware.Logger())
-
-	g.POST(paths.Auth.Register.Route, h.Register)
-	g.POST(paths.Auth.Login.Route, h.Login)
-	//midlleware isAuthenticated for logout
-	g.POST(paths.Auth.Logout.Route, h.Logout, middlewares.IsAuthenticated)
-	g.POST(paths.Auth.RefreshTkn.Route, h.RefreshToken)
+	e.POST("/register", h.Register)
+	e.POST("/login", h.Login)
+	e.POST("/logout", h.Logout, middlewares.IsAuthenticated)
+	e.POST("/refresh", h.RefreshToken)
 
 	rh := NewResetPasswordHandler(db)
-	g.POST(paths.Auth.ForgotPwd.Route, rh.ForgotPassword)
-	g.POST(paths.Auth.RecoveryPwd.Route, rh.RecoveryPassword)
+	e.POST("/forgot-password", rh.ForgotPassword)
+	e.POST("/recovery-password", rh.RecoveryPassword)
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {

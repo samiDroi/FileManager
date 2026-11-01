@@ -7,10 +7,11 @@ import { CreateButton } from '../../../shared/components/buttons/create-button/c
 import { projectService } from '../services';
 import { ProjectData } from '../../../core';
 import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
+import { EmptyStateComponent } from '../../../shared/components';
 
 @Component({
   selector: 'app-projects-component',
-  imports: [ListProjects, UiSearchBarComponent, CreateButton],
+  imports: [ListProjects, UiSearchBarComponent, CreateButton, EmptyStateComponent],
   templateUrl: './projects-component.html',
   styleUrl: './projects-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +44,6 @@ export class projectsComponent implements OnInit {
           name: newProject.name,
           client_id: newProject.client_id
         });
-        this.projectService.getAll();
       }
     });
   }
@@ -58,7 +58,6 @@ export class projectsComponent implements OnInit {
       if (updatedProject) {
         console.log('Actualizar proyecto:', updatedProject);
         this.projectService.onUpdate(updatedProject.id, updatedProject);
-        this.projectService.getAll();
       }
     });
   }

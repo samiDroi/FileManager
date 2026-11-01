@@ -1,6 +1,10 @@
 #!/bin/bash
+set -e
 # Migrate Fresh para PostgreSQL
 # Uso: ./migrate-fresh.sh
+
+# Ubicarse en Back/server sin importar desde donde se ejecute
+cd "$(dirname "$0")/.." || exit 1
 
 echo ""
 echo "========================================"
@@ -11,20 +15,23 @@ echo ""
 read -s -p "Ingresa el password de PostgreSQL: " DB_PASSWORD
 echo ""
 
-DB_CONN="postgresql://postgres:${DB_PASSWORD}@localhost:5432/FileManagerDB"
+DB_CONN="host=localhost port=5432 user=postgres password=${DB_PASSWORD} dbname=FileManagerDB sslmode=disable"
+
+if ! command -v goose >/dev/null 2>&1; then
+    echo "ERROR: goose no encontrado en PATH"
+    exit 1
+fi
 
 echo ""
-echo "1. Eliminando todas las tablas..."
-psql "$DB_CONN" -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
-if [ $? -ne 0 ]; then
-    echo "ERROR: Fallo al recrear esquema"
+echo "1. Revirtiendo todas las migraciones..."
+if ! goose postgres "$DB_CONN" -dir=db/migrations reset; then
+    echo "ERROR: Fallo al revertir migraciones"
     exit 1
 fi
 
 echo ""
 echo "2. Ejecutando migraciones..."
-goose -dir=db/migrations "$DB_CONN" up
-if [ $? -ne 0 ]; then
+if ! goose postgres "$DB_CONN" -dir=db/migrations up; then
     echo "ERROR: Fallo al ejecutar migraciones"
     exit 1
 fi

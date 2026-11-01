@@ -1,0 +1,19 @@
+<main class="empty-state">
+  <section class="empty-state__card">
+    <div class="empty-state__illustration">
+      <img [src]="imagenUrl" [alt]="titulo" />
+    </div>
+
+    <h3 class="empty-state__title">{{ titulo }}</h3>
+    <p class="empty-state__subtitle">{{ subtitulo }}</p>
+
+    <button class="empty-state__button" type="button" (click)="buttonClick.emit()">
+      {{ textoBoton }}
+    </button>
+
+    <!-- <div class="empty-state__dropzone">
+      <span>Arrastra y suelta aquí</span>
+      <span>o selecciona archivos desde tu dispositivo</span>
+    </div> -->
+  </section>
+</main>

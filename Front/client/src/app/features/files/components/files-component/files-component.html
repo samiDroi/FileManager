@@ -3,11 +3,21 @@
           (clicked)="onCreateFile()">  
         </app-create-button>
 <app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
-<app-list-files-modal 
-  [files]="allFiles()"
-  [isLoading]="isLoading()"
-  (editFile)="onEditFile($event)"
-  (downloadFile)="onDownloadFile($event)"
-  (deleteFile)="onDeleteFile($event)"
-  (viewFile)="onViewFile($event)">
-</app-list-files-modal>
+@if (allFiles().length === 0 && !isLoading()) {
+  <app-empty-state
+    imagenUrl="/images/File%20searching.svg"
+    titulo="Aún no tienes archivos"
+    subtitulo="Sube tu primer archivo para empezar."
+    textoBoton="Subir archivo"
+    (buttonClick)="onCreateFile()">
+  </app-empty-state>
+} @else {
+  <app-list-files-modal
+    [files]="allFiles()"
+    [isLoading]="isLoading()"
+    (editFile)="onEditFile($event)"
+    (downloadFile)="onDownloadFile($event)"
+    (deleteFile)="onDeleteFile($event)"
+    (viewFile)="onViewFile($event)">
+  </app-list-files-modal>
+}
