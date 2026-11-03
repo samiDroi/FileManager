@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, fromEvent } from 'rxjs';
 import { AuthService } from '../../auth/auth-service';
 import { SidebarComponent } from './sidebar-component/sidebar-component';
 import { AppRoutes } from '../../core/routes/appRoutes';
@@ -25,6 +25,10 @@ export class MainLayout implements OnInit {
   private topbarTitleService = inject(TopbarTitleService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
+  private readonly sidebarWidth = 280;
+  private userCollapsed = false;
+  protected sidebarCollapsed = signal(this.isViewportNarrow());
   protected currentUser = this.authService.currentUser;
   private navigationEnd = toSignal(
     this.router.events.pipe(
@@ -92,8 +96,35 @@ export class MainLayout implements OnInit {
     return sectionTitles[feature] ?? feature;
   }
 
+  constructor() {
+    afterNextRender(() => {
+      this.syncSidebarWithViewport();
+      fromEvent(window, 'resize')
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.syncSidebarWithViewport());
+    });
+  }
+
   ngOnInit(): void {
     this.clientService.getAllClients();
+  }
+
+  private isViewportNarrow(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth < this.sidebarWidth * 3;
+  }
+
+  private syncSidebarWithViewport(): void {
+    this.sidebarCollapsed.set(this.isViewportNarrow() ? true : this.userCollapsed);
+  }
+
+  protected toggleSidebar(): void {
+    this.userCollapsed = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(this.userCollapsed);
+  }
+
+  protected expandSidebar(): void {
+    this.userCollapsed = false;
+    this.sidebarCollapsed.set(false);
   }
 
   openCreateClientModal(): void {

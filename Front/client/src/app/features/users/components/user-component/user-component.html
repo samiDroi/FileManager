@@ -3,10 +3,18 @@
         placeholder="Buscar usuarios..." 
         (search)="onSearch($event)">
     </app-ui-search-bar>
-    <app-create-button label="Crear Usuario" (clicked)="openCreateUserModal()"></app-create-button>
+    @if (users().length > 0) {
+        <app-create-button label="Crear Usuario" (clicked)="openCreateUserModal()"></app-create-button>
+    }
 </div>
 @if (users().length > 0) {
   <app-list-users [usersList]="users()"></app-list-users>
-}@else {
-    <p>No hay usuarios disponibles.</p>
+} @else {
+  <app-empty-state
+    imagenUrl="/images/Add%20User.svg"
+    titulo="No hay usuarios registrados"
+    subtitulo="Crea el primer usuario para que pueda acceder al sistema."
+    textoBoton="Crear Usuario"
+    (buttonClick)="openCreateUserModal()">
+  </app-empty-state>
 }

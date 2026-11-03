@@ -1,14 +1,26 @@
-<div class="layout-wrapper">
+<div class="layout-wrapper" [class.sidebar-collapsed]="sidebarCollapsed()">
   
   <app-sidebar 
     class="layout-sidebar"
+    [collapsed]="sidebarCollapsed()"
+    (requestExpand)="expandSidebar()"
     (onCreateClient)="openCreateClientModal()"
     [clientsList]="clients()">
   </app-sidebar>
 
   <main class="layout-main">
     <header class="topbar">
-      <h2>{{ pageTitle() }}</h2>
+      <div class="topbar-left">
+        <button
+          type="button"
+          class="btn-toggle-sidebar"
+          (click)="toggleSidebar()"
+          [attr.aria-label]="sidebarCollapsed() ? 'Desplegar barra lateral' : 'Plegar barra lateral'"
+          [attr.title]="sidebarCollapsed() ? 'Desplegar barra lateral' : 'Plegar barra lateral'">
+          <i class="fa fa-bars"></i>
+        </button>
+        <h2>{{ pageTitle() }}</h2>
+      </div>
       @let user = currentUser();
       @if (user) {
         <div class="user-strip">

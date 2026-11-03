@@ -1,14 +1,14 @@
-<div class="header">
-  <h2>Gestión de proyectos</h2>
-  <app-create-button 
-    [label]="'+ Nuevo Proyecto'" 
-    (clicked)="openCreateProjectModal()">  
+
+@if(projectsList().length > 0 && !loading()) {
+  <app-create-button
+    [label]="'+ Nuevo Proyecto'"
+    (clicked)="openCreateProjectModal()">
   </app-create-button>
-</div>
+}
 
 <div class="toolbar">
-  <app-ui-search-bar 
-    placeholder="Buscar proyectos..." 
+  <app-ui-search-bar
+    placeholder="Buscar proyectos..."
     (search)="onSearch($event)">
   </app-ui-search-bar>
 </div>

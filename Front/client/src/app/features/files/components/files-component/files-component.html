@@ -1,7 +1,10 @@
-<app-create-button 
-          [label]="'Subir nuevo archivo'" 
-          (clicked)="onCreateFile()">  
+@if(allFiles().length > 0) {
+  <app-create-button
+          [label]="'Subir nuevo archivo'"
+          (clicked)="onCreateFile()">
         </app-create-button>
+}
+
 <app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
 @if (allFiles().length === 0 && !isLoading()) {
   <app-empty-state

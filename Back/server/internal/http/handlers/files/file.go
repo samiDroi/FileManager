@@ -1,33 +1,33 @@
 package files
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"path/filepath"
 	"server/internal/domain/dtos"
 	"server/internal/http/middlewares"
+	"server/internal/services"
 	"server/internal/store/repository"
 	"strconv"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
 
 type FileHandler struct {
-	db   *pgxpool.Pool
-	repo *repository.FileRepository
+	service *services.FileService
 }
 
-func NewFileHandler(db *pgxpool.Pool) *FileHandler {
+func NewFileHandler(service *services.FileService) *FileHandler {
 	return &FileHandler{
-		db:   db,
-		repo: repository.NewFileRepository(db),
+		service: service,
 	}
 }
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
-	h := NewFileHandler(db)
+	repo := repository.NewFileRepository(db)
+	svc := services.NewFileService(repo)
+	h := NewFileHandler(svc)
 
 	e.GET("/files", h.GetAll, middlewares.IsAuthenticated)
 	e.GET("/files/project/:id", h.GetAllByProject, middlewares.IsAuthenticated)
@@ -40,12 +40,13 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 }
 
 func (h *FileHandler) GetAll(c echo.Context) error {
-	files, err := h.repo.GetAllFiles(c.Request().Context())
+	files, err := h.service.GetAllFiles(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, files)
 }
+
 func (h *FileHandler) GetAllByProject(c echo.Context) error {
 	id_param := c.Param("id")
 	project_id, err := strconv.Atoi(id_param)
@@ -53,20 +54,22 @@ func (h *FileHandler) GetAllByProject(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	files, err := h.repo.GetAllFilesByProject(c.Request().Context(), project_id)
+	files, err := h.service.GetAllFilesByProject(c.Request().Context(), project_id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, files)
 }
+
 func (h *FileHandler) Search(c echo.Context) error {
 	param := c.QueryParam("q")
-	files, err := h.repo.SearchFiles(c.Request().Context(), param)
+	files, err := h.service.SearchFiles(c.Request().Context(), param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, files)
 }
+
 func (h *FileHandler) Download(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
@@ -74,7 +77,7 @@ func (h *FileHandler) Download(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "invalid file ID"})
 	}
 
-	file, err := h.repo.GetFileByID(c.Request().Context(), id)
+	file, err := h.service.GetFileByID(c.Request().Context(), id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, map[string]string{"error": "file not found"})
 	}
@@ -90,15 +93,16 @@ func (h *FileHandler) Upload(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "file is required"})
 	}
-	//validate with the dto
+
 	var req dtos.FileRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	//valid dto fields
-	if req.ProjectID == 0 || req.Tittle == "" || req.Year == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": "project_id, tittle and year are required"})
+
+	if err := h.service.ValidateUpload(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
 	userSess := middlewares.GetRequestUserSession(c)
 
 	src, err := file.Open()
@@ -106,30 +110,31 @@ func (h *FileHandler) Upload(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	defer src.Close()
-	//secure name to avoid conflicts and security issues, but keep the original extension
-	ext := filepath.Ext(file.Filename)
-	safeFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 
-	// newFile, err := h.repo.SaveFile(c.Request().Context(), req.ProjectID, req.Tittle, req.Year, safeFileName, src)
-	newFile, err := h.repo.SaveFile(c.Request().Context(), req, safeFileName, src, userSess.UserID)
+	newFile, err := h.service.UploadFile(c.Request().Context(), req, file.Filename, src, userSess.UserID)
 	if err != nil {
+		if errors.Is(err, services.ErrInvalidFileData) {
+			return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, newFile)
 }
+
 func (h *FileHandler) Delete(c echo.Context) error {
 	id_param := c.Param("id")
 	id, err := strconv.Atoi(id_param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	err = h.repo.DeleteFile(c.Request().Context(), id)
+	err = h.service.DeleteFile(c.Request().Context(), id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "File deleted"})
 }
+
 func (h *FileHandler) Edit(c echo.Context) error {
 	id_param := c.Param("id")
 	id, err := strconv.Atoi(id_param)
@@ -140,19 +145,20 @@ func (h *FileHandler) Edit(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	updated, err := h.repo.EditFile(c.Request().Context(), id, req)
+	updated, err := h.service.EditFile(c.Request().Context(), id, req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, updated)
 }
+
 func (h *FileHandler) GetPreviewFile(c echo.Context) error {
 	id_param := c.Param("id")
 	id, err := strconv.Atoi(id_param)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
-	file, err := h.repo.GetFileByID(c.Request().Context(), id)
+	file, err := h.service.GetFileByID(c.Request().Context(), id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, map[string]string{"error": "file not found"})
 	}

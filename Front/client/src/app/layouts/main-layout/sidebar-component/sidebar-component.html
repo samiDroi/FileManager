@@ -1,18 +1,21 @@
-<aside class="sidebar-container">
-  <div class="brand">
-    <h1><i class="fa fa-cloud"></i> File Manager</h1>
+<aside class="sidebar-container" [class.collapsed]="collapsed()">
+  <div class="brand" (click)="handleNavigation()" [attr.title]="collapsed() ? 'File Manager' : null">
+    <h1><i class="fa fa-cloud"></i> <span class="brand-text">File Manager</span></h1>
   </div>
 
   <div class="sidebar-section">
     <span class="section-label">Vistas Globales</span>
     <nav class="nav-menu">
-      <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Archivos' : null">
         <i class="fa fa-file"></i> <span class="label">Todos los Archivos</span>
       </a>
-      <a [routerLink]="[routes.projects]" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="[routes.projects]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Proyectos' : null">
         <i class="fa fa-folder-open"></i> <span class="label">Todos los Proyectos</span>
       </a>
-      <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
+      <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Clientes' : null">
         <i class="fa fa-briefcase"></i> <span class="label">Todos los Clientes</span>
       </a>
     </nav>
@@ -38,7 +41,8 @@
 
     <div class="clients-scroll-area">
       @for (client of filteredClients; track client.id) {
-        <div class="client-item" [routerLink]="['/overview/client', client.id]" routerLinkActive="active">
+        <div class="client-item" [routerLink]="['/overview/client', client.id]" routerLinkActive="active"
+          (click)="handleNavigation()" [attr.title]="collapsed() ? client.name : null">
           <div class="client-summary">
             <i class="fa fa-building"></i> <span>{{ client.name }}</span>
           </div>
@@ -48,7 +52,8 @@
   </div>
 
   <div class="sidebar-footer">
-    <a routerLink="/configuracion" class="nav-item">
+    <a routerLink="/configuracion" class="nav-item" (click)="handleNavigation()"
+      [attr.title]="collapsed() ? 'Configuración' : null">
       <i class="fa fa-cog"></i> <span class="label">Configuración</span>
     </a>
 

@@ -6,10 +6,11 @@ import { UserData } from '../../../../core/domain/dtos/user';
 import { CreateButton } from '../../../../shared/components/buttons/create-button/create-button';
 import { MatDialog } from '@angular/material/dialog';
 import { RegisterComponent } from '../../../../auth';
+import { EmptyStateComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-user-component',
-  imports: [ListUsersComponent,UiSearchBarComponent,CreateButton],
+  imports: [ListUsersComponent, UiSearchBarComponent, CreateButton, EmptyStateComponent],
   templateUrl: './user-component.html',
   styleUrl: './user-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

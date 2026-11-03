@@ -4,6 +4,7 @@
 
 .empty-state {
   display: flex;
+  flex-direction: column;
   min-height: 50vh;
   align-items: center;
   justify-content: center;
@@ -31,8 +32,8 @@
 
 .empty-state__illustration {
   display: flex;
-  width: 8rem;
-  height: 8rem;
+  width: 20rem;
+  height: 15rem;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
@@ -48,13 +49,14 @@
 .empty-state__title {
   margin: 0;
   color: #1e293b;
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 600;
 }
 
 .empty-state__subtitle {
   margin: 0.75rem 0 1.5rem;
   color: #64748b;
+  font-size: 1.15rem;
   line-height: 1.5;
 }
 
@@ -66,6 +68,7 @@
   color: #fff;
   cursor: pointer;
   font: inherit;
+  font-size: 1.1rem;
   font-weight: 600;
   transition: background-color 150ms ease;
 }
@@ -103,5 +106,18 @@
 
   .empty-state__card {
     padding: 2rem 1.25rem;
+  }
+
+  .empty-state__illustration {
+    width: 9rem;
+    height: 9rem;
+  }
+
+  .empty-state__title {
+    font-size: 1.7rem;
+  }
+
+  .empty-state__subtitle {
+    font-size: 1.05rem;
   }
 }

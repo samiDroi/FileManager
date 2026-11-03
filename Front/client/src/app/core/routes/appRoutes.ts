@@ -14,6 +14,13 @@ export const AppRoutes = {
         files: 'files',
         clients: 'clients',
         projects: 'projects'
+    },
+    admin:{
+      dashboard: 'admin-dashboard',
+      users: 'admin-users',
+      files: 'admin-files',
+      clients: 'admin-clients',
+      projects: 'admin-projects'
     }
 }
 

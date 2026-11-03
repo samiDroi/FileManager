@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 	"server/internal/domain/dtos"
-	"server/internal/domain/models"
 	"server/internal/http/middlewares"
+	"server/internal/services"
 	"server/internal/store/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,26 +12,26 @@ import (
 )
 
 type TypeFileHandler struct {
-	db   *pgxpool.Pool
-	repo *repository.TypeFileRepository
+	service *services.TypeFileService
 }
 
-func NewTypeFileHandler(db *pgxpool.Pool) *TypeFileHandler {
+func NewTypeFileHandler(service *services.TypeFileService) *TypeFileHandler {
 	return &TypeFileHandler{
-		db:   db,
-		repo: repository.NewTypeFileRepository(db),
+		service: service,
 	}
 }
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
-	h := NewTypeFileHandler(db)
+	repo := repository.NewTypeFileRepository(db)
+	svc := services.NewTypeFileService(repo)
+	h := NewTypeFileHandler(svc)
 
 	e.GET("/type-files", h.GetAllTypeFiles, middlewares.IsAuthenticated)
 	e.POST("/type-files/new", h.CreateTypeFile, middlewares.IsAuthenticated)
 }
 
 func (h *TypeFileHandler) GetAllTypeFiles(ctx echo.Context) error {
-	rows, err := h.repo.GetAllTypeFiles(ctx.Request().Context())
+	rows, err := h.service.GetAllTypeFiles(ctx.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -49,12 +49,7 @@ func (h *TypeFileHandler) CreateTypeFile(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	var fileTypes []models.FileType
-	for _, t := range req.Types {
-		fileTypes = append(fileTypes, models.FileType{Name: t.Name})
-	}
-
-	typesFiles, err := h.repo.BulkCreateTypeFiles(ctx.Request().Context(), fileTypes, userSess.UserID)
+	typesFiles, err := h.service.BulkCreateTypeFiles(ctx.Request().Context(), req, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

@@ -15,10 +15,18 @@ import { CreateButton } from '../../../shared/components/buttons/create-button/c
 export class SidebarComponent {
   protected readonly routes = AppRoutes.features;
   clientsList = input<ClientData[] | null>(null);
+  collapsed = input(false);
 
   @Output() onCreateClient = new EventEmitter<void>();
+  @Output() requestExpand = new EventEmitter<void>();
 
   searchTerm = '';
+
+  handleNavigation(): void {
+    if (this.collapsed()) {
+      this.requestExpand.emit();
+    }
+  }
 
   get filteredClients(): ClientData[] {
     if (!this.searchTerm.trim()) {

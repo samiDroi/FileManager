@@ -2,6 +2,7 @@
 package summary
 
 import (
+	"server/internal/services"
 	"server/internal/store/repository/summary"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -9,23 +10,24 @@ import (
 )
 
 type StatsHandler struct {
-	db   *pgxpool.Pool
-	repo *summary.StatsRepository
+	service *services.StatsService
 }
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
-	h := NewStatsHandler(db)
+	repo := summary.NewStatsRepository(db)
+	svc := services.NewStatsService(repo)
+	h := NewStatsHandler(svc)
 	e.GET("/stats/file-types", h.GetFileTypesStats)
 }
-func NewStatsHandler(db *pgxpool.Pool) *StatsHandler {
+
+func NewStatsHandler(service *services.StatsService) *StatsHandler {
 	return &StatsHandler{
-		db:   db,
-		repo: summary.NewStatsRepository(db),
+		service: service,
 	}
 }
 
 func (h *StatsHandler) GetFileTypesStats(c echo.Context) error {
-	haveStats, err := h.repo.GetFileTypesStats(c.Request().Context())
+	haveStats, err := h.service.GetFileTypesStats(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(500, err.Error())
 	}

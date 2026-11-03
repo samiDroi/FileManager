@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"server/internal/domain/dtos"
 	"server/internal/http/middlewares"
+	"server/internal/services"
 	"server/internal/store/repository"
 	"strconv"
 
@@ -12,19 +13,19 @@ import (
 )
 
 type UserHandler struct {
-	db   *pgxpool.Pool
-	repo *repository.UserRepository
+	service *services.UserService
 }
 
-func NewUserHandler(db *pgxpool.Pool) *UserHandler {
+func NewUserHandler(service *services.UserService) *UserHandler {
 	return &UserHandler{
-		db:   db,
-		repo: repository.NewUserRepository(db),
+		service: service,
 	}
 }
 
 func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
-	h := NewUserHandler(db)
+	repo := repository.NewUserRepository(db)
+	svc := services.NewUserService(repo)
+	h := NewUserHandler(svc)
 	e.GET("/users", h.GetAll, middlewares.IsAuthenticated)
 	e.GET("/users/search", h.Search, middlewares.IsAuthenticated)
 	e.GET("/users/:id", h.GetByID, middlewares.IsAuthenticated)
@@ -34,7 +35,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 
 func (h *UserHandler) Search(c echo.Context) error {
 	query := c.QueryParam("query")
-	users, err := h.repo.SearchUsers(c.Request().Context(), query)
+	users, err := h.service.SearchUsers(c.Request().Context(), query)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -42,7 +43,7 @@ func (h *UserHandler) Search(c echo.Context) error {
 }
 
 func (h *UserHandler) GetAll(c echo.Context) error {
-	users, err := h.repo.GetAllUsers(c.Request().Context())
+	users, err := h.service.GetAllUsers(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -55,7 +56,7 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid user ID")
 	}
-	user, err := h.repo.GetUserByID(c.Request().Context(), paramID)
+	user, err := h.service.GetUserByID(c.Request().Context(), paramID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "User not found")
 	}
@@ -72,7 +73,7 @@ func (h *UserHandler) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
 	}
-	user, err := h.repo.UpdateUser(c.Request().Context(), &req, paramID)
+	user, err := h.service.UpdateUser(c.Request().Context(), &req, paramID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update user")
 	}
@@ -85,7 +86,7 @@ func (h *UserHandler) Delete(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid user ID")
 	}
-	err = h.repo.DeleteUser(c.Request().Context(), paramID)
+	err = h.service.DeleteUser(c.Request().Context(), paramID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to delete user")
 	}
