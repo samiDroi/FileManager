@@ -1,5 +1,6 @@
-import { inject, Injectable, signal } from '@angular/core';
-import { catchError, EMPTY, map } from 'rxjs';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, EMPTY, map, Observable, Subject, switchMap, tap } from 'rxjs';
 import { ClientRequest, ClientData, ClientsWithProjects } from '../../../core/domain/dtos';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -10,6 +11,8 @@ import Swal from '../../../shared/utils/swal';
 })
 export class ClientService {
   private http = inject(HttpClient);
+  private destroyRef = inject(DestroyRef);
+  private readonly clientListRequests = new Subject<string | null>();
 
   state = signal({
     clients: new Map<number, ClientData>(),
@@ -21,29 +24,47 @@ export class ClientService {
     loading: true
   });
 
-  getAllClients(){
-    this.http.get<ClientData[]>(ApiRoutes.clients.getAll,{withCredentials:true}).pipe(
+  constructor() {
+    this.clientListRequests.pipe(
+      tap(() => this.state.update(state => ({ ...state, loading: true }))),
+      switchMap(query => this.requestClients(query)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(clientsMap => {
+      this.state.update(state => ({
+        ...state,
+        clients: clientsMap,
+        loading: false
+      }));
+    });
+  }
+
+  private requestClients(query: string | null): Observable<Map<number, ClientData>> {
+    const request$ = query === null
+      ? this.http.get<ClientData[]>(ApiRoutes.clients.getAll, { withCredentials: true })
+      : this.http.get<ClientData[]>(ApiRoutes.clients.search, {
+        params: new HttpParams().set('q', query)
+      });
+
+    return request$.pipe(
       map(clients => {
         const clientsMap = new Map<number, ClientData>();
-        if (clients) {
-          clients.forEach(client => clientsMap.set(client.id, client));
-        }
+        (clients ?? []).forEach(client => clientsMap.set(client.id, client));
         return clientsMap;
       }),
       catchError(error => {
         console.error('Error al obtener clientes:', error);
-        this.state.update(state => ({ ...state, loading: false, error: 'No se pudieron cargar los clientes' }));
+        this.state.update(state => ({
+          ...state,
+          loading: false,
+          error: 'No se pudieron cargar los clientes'
+        }));
         return EMPTY;
       })
-    ).subscribe({
-      next: (clientsMap) => {
-        this.state.update(state => ({ 
-          ...state, 
-          clients: clientsMap, 
-          loading: false 
-        }));
-      }
-    });
+    );
+  }
+
+  getAllClients(): void {
+    this.clientListRequests.next(null);
   }
 
   searchClients(query: string): void {
@@ -52,28 +73,7 @@ export class ClientService {
       return;
     }
 
-    const params = new HttpParams().set('q', query);
-
-    this.http.get<ClientData[]>(ApiRoutes.clients.search, { params }).pipe(
-      map(clients => {
-        const clientsMap = new Map<number, ClientData>();
-        if (clients) {
-          clients.forEach(client => clientsMap.set(client.id, client));
-        }
-        return clientsMap;
-      }),
-      catchError(error => {
-        console.error('Error al buscar clientes:', error);
-        return EMPTY;
-      })
-    ).subscribe({
-      next: (clientsMap) => {
-        this.state.update(state => ({ 
-          ...state, 
-          clients: clientsMap
-        }));
-      }
-    });
+    this.clientListRequests.next(query);
   }
 
   createClient(newClient: ClientRequest){
@@ -113,7 +113,7 @@ export class ClientService {
       next: (updatedClient) => {
         this.state.update(state => {
           const updatedMap = new Map(state.clients);
-          updatedMap.set(id, updatedClient); 
+          updatedMap.set(id, updatedClient);
           return {
             ...state,
             clients: updatedMap,
@@ -134,6 +134,44 @@ export class ClientService {
       }
     });
   }
+  async deleteClient(client: ClientData): Promise<void> {
+    const result = await Swal.fire({
+      title: '¿Eliminar cliente?',
+      text: `Se eliminará el cliente "${client.name}".`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    this.http.delete<void>(ApiRoutes.clients.delete(client.id)).subscribe({
+      next: () => {
+        this.state.update(current => {
+          const clients = new Map(current.clients);
+          clients.delete(client.id);
+          return { ...current, clients };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Cliente eliminado',
+          text: 'El cliente se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: error => {
+        console.error('Error al eliminar el cliente:', error);
+        Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
+      },
+    });
+  }
+
   getClientsWithProjects(){
     this.http.get<ClientsWithProjects[]>(ApiRoutes.clients.withProjects, {withCredentials:true}).subscribe({
       next: (data) => {

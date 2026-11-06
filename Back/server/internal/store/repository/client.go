@@ -18,14 +18,15 @@ func NewClientRepository(db *pgxpool.Pool) *ClientRepository {
 	return &ClientRepository{db: db}
 }
 
-func (c *ClientRepository) GetAllClients(ctx context.Context) ([]dtos.ClientResponse, error) {
+func (c *ClientRepository) GetAllClients(ctx context.Context, userID int) ([]dtos.ClientResponse, error) {
 	q := `SELECT c.id, c.name, ci.email, ci.contact_phone, 
           COALESCE((SELECT COUNT(*) FROM "projects" p WHERE p.client_id = c.id), 0) as count_projects,
           c.created_at
           FROM clients c 
-          LEFT JOIN "contact_info" ci ON c.id = ci.client_id`
+          LEFT JOIN "contact_info" ci ON c.id = ci.client_id
+          WHERE ` + clientVisibilityPredicate
 
-	rows, err := c.db.Query(ctx, q)
+	rows, err := c.db.Query(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func (c *ClientRepository) GetAllClients(ctx context.Context) ([]dtos.ClientResp
 	return clients, nil
 }
 
-func (c *ClientRepository) SearchClient(ctx context.Context, searchParam string) ([]dtos.ClientResponse, error) {
+func (c *ClientRepository) SearchClient(ctx context.Context, searchParam string, userID int) ([]dtos.ClientResponse, error) {
 	if searchParam == "" {
 		return []dtos.ClientResponse{}, nil
 	}
@@ -57,10 +58,10 @@ func (c *ClientRepository) SearchClient(ctx context.Context, searchParam string)
                c.created_at
         FROM clients c 
         LEFT JOIN "contact_info" ci ON c.id = ci.client_id
-        WHERE c.name ILIKE $1
-    `
+        WHERE c.name ILIKE $2
+          AND ` + clientVisibilityPredicate
 
-	rows, err := c.db.Query(ctx, query, searchPattern)
+	rows, err := c.db.Query(ctx, query, userID, searchPattern)
 	if err != nil {
 		return nil, err
 	}
@@ -181,12 +182,14 @@ func (c *ClientRepository) GetClientByID(ctx context.Context, clientID int) (*dt
 	return &client, nil
 }
 
-func (r *ClientRepository) GetClientsWithProjects(ctx context.Context) ([]dtos.ClientWithProjectsResponse, error) {
+func (r *ClientRepository) GetClientsWithProjects(ctx context.Context, userID int) ([]dtos.ClientWithProjectsResponse, error) {
 	q := `SELECT c.id, c.name, p.id as project_id, p.name as project_name
 		 FROM clients c
-		 JOIN projects p ON c.id = p.client_id`
+		 JOIN projects p ON c.id = p.client_id
+		 WHERE ` + clientVisibilityPredicate + `
+		   AND ` + projectVisibilityPredicate
 
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.db.Query(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}

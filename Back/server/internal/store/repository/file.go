@@ -16,6 +16,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const fileCapabilitySelect = `,
+	` + fileEditPredicate + ` AS can_edit,
+	` + fileDeletePredicate + ` AS can_delete,
+	` + fileDownloadPredicate + ` AS can_download`
+
 type FileRepository struct {
 	db *pgxpool.Pool
 }
@@ -51,53 +56,16 @@ func toPtrSlice[T any](slice []T) []*T {
 	return result
 }
 
-func (r *FileRepository) GetAllFiles(ctx context.Context) ([]dtos.FileResponse, error) {
-	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_by, f.updated_by, f.created_at,
-			  COALESCE(p.name, '') as project_name,
-			  COALESCE(ft.name, '') as file_type
-		  FROM files f
-		  LEFT JOIN projects p ON p.id = f.project_id
-		  LEFT JOIN file_types ft ON ft.id = f.type_id`
-
-	rows, err := r.db.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var files []dtos.FileResponse
-	for rows.Next() {
-		var f dtos.FileResponse
-		var createdAt time.Time
-		err := rows.Scan(
-			&f.ID,
-			&f.Tittle,
-			&f.Path,
-			&f.ProjectID,
-			&f.Year,
-			&createdAt,
-			&f.ProjectName,
-			&f.FileType,
-		)
-		if err != nil {
-			return nil, err
-		}
-		f.CreatedAt = utils.ToCustomTime(createdAt)
-		files = append(files, f)
-	}
-	return files, nil
-}
-
-func (r *FileRepository) GetAllFilesByProject(ctx context.Context, id int) ([]dtos.FileResponse, error) {
+func (r *FileRepository) GetAllFiles(ctx context.Context, userID int) ([]dtos.FileResponse, error) {
 	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_at,
 			  COALESCE(p.name, '') as project_name,
-			  COALESCE(ft.name, '') as file_type
+			  COALESCE(ft.name, '') as file_type` + fileCapabilitySelect + `
 		  FROM files f
 		  LEFT JOIN projects p ON p.id = f.project_id
 		  LEFT JOIN file_types ft ON ft.id = f.type_id
-		  WHERE f.project_id = $1`
+		  WHERE ` + fileVisibilityPredicate
 
-	rows, err := r.db.Query(ctx, q, id)
+	rows, err := r.db.Query(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +85,55 @@ func (r *FileRepository) GetAllFilesByProject(ctx context.Context, id int) ([]dt
 			&createdAt,
 			&f.ProjectName,
 			&f.FileType,
+			&f.CanEdit,
+			&f.CanDelete,
+			&f.CanDownload,
+		)
+		if err != nil {
+			return nil, err
+		}
+		f.CreatedAt = utils.ToCustomTime(createdAt)
+		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r *FileRepository) GetAllFilesByProject(ctx context.Context, id int, userID int) ([]dtos.FileResponse, error) {
+	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_at,
+			  COALESCE(p.name, '') as project_name,
+			  COALESCE(ft.name, '') as file_type` + fileCapabilitySelect + `
+		  FROM files f
+		  LEFT JOIN projects p ON p.id = f.project_id
+		  LEFT JOIN file_types ft ON ft.id = f.type_id
+		  WHERE ` + fileVisibilityPredicate + `
+		    AND f.project_id = $2`
+
+	rows, err := r.db.Query(ctx, q, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []dtos.FileResponse
+	for rows.Next() {
+		var f dtos.FileResponse
+		var createdAt time.Time
+		err := rows.Scan(
+			&f.ID,
+			&f.Tittle,
+			&f.Path,
+			&f.ProjectID,
+			&f.TypeID,
+			&f.Year,
+			&createdAt,
+			&f.ProjectName,
+			&f.FileType,
+			&f.CanEdit,
+			&f.CanDelete,
+			&f.CanDownload,
 		)
 		if err != nil {
 			return nil, err
@@ -128,17 +145,51 @@ func (r *FileRepository) GetAllFilesByProject(ctx context.Context, id int) ([]dt
 
 }
 
-func (r *FileRepository) GetFileByID(ctx context.Context, id int) (dtos.FileResponse, error) {
-	q := `SELECT f.tittle, f.path
+func (r *FileRepository) GetFileByID(ctx context.Context, id int, userID int) (dtos.FileResponse, error) {
+	q := `SELECT f.tittle, f.path` + fileCapabilitySelect + `
 		  FROM files f
-		  WHERE f.id = $1`
+		  WHERE f.id = $2
+		    AND ` + fileVisibilityPredicate
 
 	var f dtos.FileResponse
-	err := r.db.QueryRow(ctx, q, id).Scan(&f.Tittle, &f.Path)
+	err := r.db.QueryRow(ctx, q, userID, id).Scan(
+		&f.Tittle,
+		&f.Path,
+		&f.CanEdit,
+		&f.CanDelete,
+		&f.CanDownload,
+	)
 	if err != nil {
 		return dtos.FileResponse{}, err
 	}
 	return f, nil
+}
+
+func (r *FileRepository) CanEditFile(ctx context.Context, fileID, userID int) (bool, error) {
+	return r.fileCapability(ctx, fileEditPredicate, fileID, userID)
+}
+
+func (r *FileRepository) CanDeleteFile(ctx context.Context, fileID, userID int) (bool, error) {
+	return r.fileCapability(ctx, fileDeletePredicate, fileID, userID)
+}
+
+func (r *FileRepository) CanDownloadFile(ctx context.Context, fileID, userID int) (bool, error) {
+	return r.fileCapability(ctx, fileDownloadPredicate, fileID, userID)
+}
+
+func (r *FileRepository) CanManageFileAccess(ctx context.Context, fileID, userID int) (bool, error) {
+	return r.fileCapability(ctx, fileDeletePredicate, fileID, userID)
+}
+
+func (r *FileRepository) fileCapability(ctx context.Context, predicate string, fileID, userID int) (bool, error) {
+	var allowed bool
+	err := r.db.QueryRow(ctx,
+		`SELECT `+predicate+`
+		 FROM files f
+		 WHERE f.id = $2`,
+		userID, fileID,
+	).Scan(&allowed)
+	return allowed, err
 }
 
 func (r *FileRepository) SaveFile(ctx context.Context, req dtos.FileRequest, filename string, src io.Reader, userID int) (dtos.FileResponse, error) {
@@ -216,21 +267,25 @@ func (r *FileRepository) SaveFile(ctx context.Context, req dtos.FileRequest, fil
 		}, nil
 	}
 	resp.CreatedAt = utils.ToCustomTime(createdAt)
+	resp.CanEdit = true
+	resp.CanDelete = true
+	resp.CanDownload = true
 	return resp, nil
 }
-func (r *FileRepository) SearchFiles(ctx context.Context, query string) ([]dtos.FileResponse, error) {
+func (r *FileRepository) SearchFiles(ctx context.Context, query string, userID int) ([]dtos.FileResponse, error) {
 	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_at,
 			  COALESCE(p.name, '') as project_name,
-			  COALESCE(ft.name, '') as file_type
+			  COALESCE(ft.name, '') as file_type` + fileCapabilitySelect + `
 		  FROM files f
 		  LEFT JOIN projects p ON p.id = f.project_id
 		  LEFT JOIN file_types ft ON ft.id = f.type_id
-		  WHERE f.tittle ILIKE '%' || $1 || '%' OR 
-			p.name ILIKE '%' || $1 || '%' OR
-			ft.name ILIKE '%' || $1 || '%' OR
-			 CAST(f.year AS TEXT) ILIKE '%' || $1 || '%'`
+		  WHERE ` + fileVisibilityPredicate + `
+		    AND (f.tittle ILIKE '%' || $2 || '%' OR
+			 p.name ILIKE '%' || $2 || '%' OR
+			 ft.name ILIKE '%' || $2 || '%' OR
+			 CAST(f.year AS TEXT) ILIKE '%' || $2 || '%')`
 
-	rows, err := r.db.Query(ctx, q, query)
+	rows, err := r.db.Query(ctx, q, userID, query)
 	if err != nil {
 		return nil, err
 	}
@@ -250,6 +305,9 @@ func (r *FileRepository) SearchFiles(ctx context.Context, query string) ([]dtos.
 			&createdAt,
 			&f.ProjectName,
 			&f.FileType,
+			&f.CanEdit,
+			&f.CanDelete,
+			&f.CanDownload,
 		)
 		if err != nil {
 			return nil, err
@@ -280,7 +338,7 @@ func (r *FileRepository) DeleteFile(ctx context.Context, id int) error {
 
 	return nil
 }
-func (r *FileRepository) EditFile(ctx context.Context, id int, req dtos.FileRequest) (dtos.FileResponse, error) {
+func (r *FileRepository) EditFile(ctx context.Context, id int, req dtos.FileRequest, userID int) (dtos.FileResponse, error) {
 	var currentPath string
 	err := r.db.QueryRow(ctx, "SELECT path FROM files WHERE id = $1", id).Scan(&currentPath)
 	if err != nil {
@@ -375,21 +433,130 @@ func (r *FileRepository) EditFile(ctx context.Context, id int, req dtos.FileRequ
 	var createdAt time.Time
 	q := `SELECT f.id, f.tittle, f.path, f.project_id, f.type_id, f.year, f.created_at,
 			  COALESCE(p.name, '') as project_name,
-			  COALESCE(ft.name, '') as file_type
+			  COALESCE(ft.name, '') as file_type` + fileCapabilitySelect + `
 		  FROM files f
 		  LEFT JOIN projects p ON p.id = f.project_id
 		  LEFT JOIN file_types ft ON ft.id = f.type_id
-		  WHERE f.id = $1`
-	err = r.db.QueryRow(ctx, q, id).Scan(
+		  WHERE f.id = $2`
+	err = r.db.QueryRow(ctx, q, userID, id).Scan(
 		&resp.ID, &resp.Tittle, &resp.Path, &resp.ProjectID,
 		&resp.TypeID, &resp.Year, &createdAt,
 		&resp.ProjectName, &resp.FileType,
+		&resp.CanEdit, &resp.CanDelete, &resp.CanDownload,
 	)
 	if err != nil {
 		return dtos.FileResponse{}, fmt.Errorf("failed to read updated file: %w", err)
 	}
 	resp.CreatedAt = utils.ToCustomTime(createdAt)
 	return resp, nil
+}
+
+func (r *FileRepository) UpsertUserAccess(ctx context.Context, fileID, userID int, accessType string, grantedBy int) error {
+	_, err := r.db.Exec(ctx,
+		`INSERT INTO files_users (file_id, user_id, access_type, granted_by, created_by, updated_by)
+		 VALUES ($1, $2, $3::file_access_enum, $4, $4, $4)
+		 ON CONFLICT (file_id, user_id) DO UPDATE
+		 SET access_type = EXCLUDED.access_type,
+		     granted_by = EXCLUDED.granted_by,
+		     granted_at = CURRENT_TIMESTAMP,
+		     updated_at = CURRENT_TIMESTAMP,
+		     updated_by = EXCLUDED.updated_by`,
+		fileID, userID, accessType, grantedBy,
+	)
+	return err
+}
+
+func (r *FileRepository) DeleteUserAccess(ctx context.Context, fileID, userID int) error {
+	_, err := r.db.Exec(ctx,
+		`DELETE FROM files_users WHERE file_id = $1 AND user_id = $2`,
+		fileID, userID,
+	)
+	return err
+}
+
+func (r *FileRepository) UpsertGroupAccess(ctx context.Context, fileID, groupID int, accessType string, grantedBy int) error {
+	_, err := r.db.Exec(ctx,
+		`INSERT INTO files_groups (file_id, group_id, access_type, granted_by, created_by, updated_by)
+		 VALUES ($1, $2, $3::file_access_enum, $4, $4, $4)
+		 ON CONFLICT (file_id, group_id) DO UPDATE
+		 SET access_type = EXCLUDED.access_type,
+		     granted_by = EXCLUDED.granted_by,
+		     granted_at = CURRENT_TIMESTAMP,
+		     updated_at = CURRENT_TIMESTAMP,
+		     updated_by = EXCLUDED.updated_by`,
+		fileID, groupID, accessType, grantedBy,
+	)
+	return err
+}
+
+func (r *FileRepository) DeleteGroupAccess(ctx context.Context, fileID, groupID int) error {
+	_, err := r.db.Exec(ctx,
+		`DELETE FROM files_groups WHERE file_id = $1 AND group_id = $2`,
+		fileID, groupID,
+	)
+	return err
+}
+
+func (r *FileRepository) GetFileAccess(ctx context.Context, fileID int) (*dtos.FileAccessResponse, error) {
+	response := &dtos.FileAccessResponse{
+		Users:  make([]dtos.FileUserAccessResponse, 0),
+		Groups: make([]dtos.FileGroupAccessResponse, 0),
+	}
+
+	userRows, err := r.db.Query(ctx,
+		`SELECT fu.user_id, u.username, fu.access_type::text, fu.granted_by, fu.granted_at
+		 FROM files_users fu
+		 JOIN "user" u ON u.id = fu.user_id
+		 WHERE fu.file_id = $1
+		 ORDER BY u.username`,
+		fileID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	for userRows.Next() {
+		var access dtos.FileUserAccessResponse
+		var grantedAt time.Time
+		if err := userRows.Scan(&access.UserID, &access.Username, &access.AccessType, &access.GrantedBy, &grantedAt); err != nil {
+			userRows.Close()
+			return nil, err
+		}
+		access.GrantedAt = utils.ToCustomTime(grantedAt)
+		response.Users = append(response.Users, access)
+	}
+	if err := userRows.Err(); err != nil {
+		userRows.Close()
+		return nil, err
+	}
+	userRows.Close()
+
+	groupRows, err := r.db.Query(ctx,
+		`SELECT fg.group_id, g.name, fg.access_type::text, fg.granted_by, fg.granted_at
+		 FROM files_groups fg
+		 JOIN "groups" g ON g.id = fg.group_id
+		 WHERE fg.file_id = $1
+		 ORDER BY g.name`,
+		fileID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer groupRows.Close()
+
+	for groupRows.Next() {
+		var access dtos.FileGroupAccessResponse
+		var grantedAt time.Time
+		if err := groupRows.Scan(&access.GroupID, &access.GroupName, &access.AccessType, &access.GrantedBy, &grantedAt); err != nil {
+			return nil, err
+		}
+		access.GrantedAt = utils.ToCustomTime(grantedAt)
+		response.Groups = append(response.Groups, access)
+	}
+	if err := groupRows.Err(); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // func (r *FileRepository) GetFilesByIds(ctx context.Context, ids []int) ([]dtos.FileResponse, error) {

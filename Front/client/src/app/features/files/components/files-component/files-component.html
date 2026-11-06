@@ -1,13 +1,30 @@
-<app-create-button 
-          [label]="'Subir nuevo archivo'" 
-          (clicked)="onCreateFile()">  
+@if (hasClients() && allFiles().length > 0 && canCreateFiles()) {
+  <app-create-button
+          [label]="'Subir nuevo archivo'"
+          (clicked)="onCreateFile()">
         </app-create-button>
+}
+
 <app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
-<app-list-files-modal 
-  [files]="allFiles()"
-  [isLoading]="isLoading()"
-  (editFile)="onEditFile($event)"
-  (downloadFile)="onDownloadFile($event)"
-  (deleteFile)="onDeleteFile($event)"
-  (viewFile)="onViewFile($event)">
-</app-list-files-modal>
+
+
+@if (allFiles().length === 0 && !isLoading() && !clientsLoading() && !projectsLoading()) {
+  <app-empty-state
+    imagenUrl="/images/File%20searching.svg"
+    titulo="Aún no tienes archivos"
+    subtitulo="Ve a proyectos para empezar a organizar tus archivos."
+    textoBoton="Ir a proyectos"
+    (buttonClick)="onEmptyStateClick()">
+  </app-empty-state>
+} @else if (allFiles().length > 0 || (hasClients() && isLoading())) {
+  <app-list-files-modal
+    [files]="allFiles()"
+    [isLoading]="isLoading()"
+    [canManageAccess]="canManageAccess()"
+    (editFile)="onEditFile($event)"
+    (downloadFile)="onDownloadFile($event)"
+    (deleteFile)="onDeleteFile($event)"
+    (viewFile)="onViewFile($event)"
+    (manageAccess)="onManageAccess($event)">
+  </app-list-files-modal>
+}

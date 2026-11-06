@@ -13,18 +13,17 @@ type Environment struct {
 	SecretKey    string
 	AuthKey      string
 	AllowOrigins string
-	CookieSecure bool
 	UploadPath   string
 	FrontendURL  string
 
-	MailMailer     string
-	MailHost       string
-	MailPort       string
-	MailUsername   string
-	MailPassword   string
-	MailEncryption string
+	MailMailer      string
+	MailHost        string
+	MailPort        string
+	MailUsername    string
+	MailPassword    string
+	MailEncryption  string
 	MailFromAddress string
-	MailFromName   string
+	MailFromName    string
 }
 
 var Config Environment
@@ -39,10 +38,9 @@ func Load() {
 		SecretKey:    getEnv("SECRET_KEY", ""),
 		AuthKey:      getEnv("AUTH_KEY", ""),
 		AllowOrigins: getEnv("ALLOW_ORIGINS", "http://localhost:4200"),
-		CookieSecure: getEnv("COOKIE_SECURE", "false") == "true",
 		UploadPath:   getEnv("UPLOAD_PATH", "./uploads"),
 
-		FrontendURL:     getEnv("FRONTEND_URL", "http://localhost:4200"),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:4200"),
 
 		MailMailer:      getEnv("MAIL_MAILER", "smtp"),
 		MailHost:        getEnv("MAIL_HOST", ""),

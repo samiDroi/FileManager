@@ -1,15 +1,27 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, map, tap } from 'rxjs/operators';
+import { finalize, map, shareReplay, tap } from 'rxjs/operators';
 import { User } from '../core/domain/models/users';
 import { ApiRoutes } from '../core/routes/apiUrls';
-import { Observable, of } from 'rxjs';
+import { PermissionService } from '../core/services/permission-service';
+import { firstValueFrom, Observable } from 'rxjs';
 
 interface AuthResponse {
   id: number;
   username: string;
   email: string;
+  access_token: string;
+  is_admin: boolean;
+  roles: string[];
+  permissions: string[];
+}
+
+interface RefreshResponse {
+  access_token: string;
+  is_admin: boolean;
+  roles: string[];
+  permissions: string[];
 }
 
 @Injectable({
@@ -18,9 +30,12 @@ interface AuthResponse {
 export class AuthStateService {
   private platformId = inject(PLATFORM_ID);
   private http = inject(HttpClient);
+  private permissionService = inject(PermissionService);
   
   private userState = signal<User | null>(null);
   private initialized = signal(false);
+  private accessToken = signal<string | null>(null);
+  private refreshRequest?: Observable<string>;
 
   readonly currentUser = this.userState.asReadonly();
   //if the user is logged, true, if not, false
@@ -36,16 +51,9 @@ export class AuthStateService {
   }
 
   try {
-    const res = await fetch(ApiRoutes.auth.refreshToken, {
-      method: 'POST',
-      credentials: 'include', // envía cookies
-    });
-    if (!res.ok) {
-      this.logout(); // 401 → limpia todo
-    }
-    // Si es OK (200), no haces nada porque initializeFromStorage() ya seteó userState
+    await firstValueFrom(this.refreshAccessToken());
   } catch {
-    this.logout(); // Error de red (server apagado) → limpia todo
+    this.logout();
   }
 }
   private initializeFromStorage(): void {
@@ -76,7 +84,14 @@ export class AuthStateService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('userData', JSON.stringify(userData));
     }
+    this.permissionService.clear();
     this.userState.set(userData);
+    this.accessToken.set(response.access_token);
+    this.permissionService.setUserPermissions(
+      response.roles ?? [],
+      response.permissions ?? [],
+      response.is_admin ?? false
+    );
   }
 
   login(credentials: any) {
@@ -95,7 +110,36 @@ export class AuthStateService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('userData');
     }
+    this.permissionService.clear();
     this.userState.set(null);
+    this.accessToken.set(null);
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken();
+  }
+
+  refreshAccessToken(): Observable<string> {
+    if (!this.refreshRequest) {
+      this.refreshRequest = this.http.post<RefreshResponse>(
+        ApiRoutes.auth.refreshToken,
+        {},
+        { withCredentials: true }
+      ).pipe(
+        tap(response => {
+          this.accessToken.set(response.access_token);
+          this.permissionService.setUserPermissions(
+            response.roles ?? [],
+            response.permissions ?? [],
+            response.is_admin ?? false
+          );
+        }),
+        map(response => response.access_token),
+        finalize(() => this.refreshRequest = undefined),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    }
+    return this.refreshRequest;
   }
 
   hasStoredUser(): boolean {

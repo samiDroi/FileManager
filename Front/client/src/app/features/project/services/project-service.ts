@@ -1,5 +1,7 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { catchError, EMPTY, map, Observable, Subject, switchMap, tap } from 'rxjs';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
 import { ProjectData, ProjectRequest } from '../../../core/domain/dtos';
 import Swal from '../../../shared/utils/swal';
@@ -9,29 +11,50 @@ import Swal from '../../../shared/utils/swal';
 })
 export class projectService {
   private http = inject(HttpClient)
+  private destroyRef = inject(DestroyRef);
+  private readonly projectListRequests = new Subject<string | null>();
   public state = signal({
     projects: new Map<number, ProjectData>(),
     loading: false
   })
 
-  getAll(){
-    this.state.set({...this.state(),loading: true});
-    this.http.get< ProjectData []>(ApiRoutes.projects.getAll).subscribe({
-      next: (getProjects) =>{
-        const newMap = new Map(this.state().projects);
-        getProjects.forEach(p => newMap.set(p.id,p))
+  constructor() {
+    this.projectListRequests.pipe(
+      tap(() => this.state.update(s => ({ ...s, loading: true }))),
+      switchMap(query => this.requestProjects(query)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(projects => {
+      this.state.update(s => ({
+        ...s,
+        projects,
+        loading: false
+      }));
+    });
+  }
 
-        this.state.update(s => ({
-          ...s,
-          projects: newMap,
-          loading: false
-        }))
-      },
-      error: (err) => {
-        console.error(err)
+  private requestProjects(query: string | null): Observable<Map<number, ProjectData>> {
+    const request$ = query === null
+      ? this.http.get<ProjectData[] | null>(ApiRoutes.projects.getAll)
+      : this.http.get<ProjectData[]>(ApiRoutes.projects.search, {
+        params: new HttpParams().set('q', query)
+      });
+
+    return request$.pipe(
+      map(projects => {
+        const projectsMap = new Map<number, ProjectData>();
+        (projects ?? []).forEach(project => projectsMap.set(project.id, project));
+        return projectsMap;
+      }),
+      catchError(error => {
+        console.error('Error al obtener proyectos:', error);
         this.state.update(s => ({ ...s, loading: false }));
-      }
-    })
+        return EMPTY;
+      })
+    );
+  }
+
+  getAll(): void {
+    this.projectListRequests.next(null);
   }
 
   onCreate(newProject: ProjectRequest){
@@ -46,6 +69,7 @@ export class projectService {
             loading: false
           };
         });
+        this.getAll();
         Swal.fire({
           icon: 'success',
           title: 'Proyecto creado',
@@ -53,6 +77,10 @@ export class projectService {
           timer: 2000,
           showConfirmButton: false
         });
+      },
+      error: (err) => {
+        console.error(err);
+        this.state.update(s => ({ ...s, loading: false }));
       }
     })
   }
@@ -84,30 +112,50 @@ export class projectService {
     })
   }
 
+  async onDelete(project: ProjectData): Promise<void> {
+    const result = await Swal.fire({
+      title: '¿Eliminar proyecto?',
+      text: `Se eliminará el proyecto "${project.name}" y sus archivos dejarán de mostrarse.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    this.http.delete<void>(ApiRoutes.projects.delete(project.id)).subscribe({
+      next: () => {
+        this.state.update(current => {
+          const projects = new Map(current.projects);
+          projects.delete(project.id);
+          return { ...current, projects };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Proyecto eliminado',
+          text: 'El proyecto se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: error => {
+        console.error('Error al eliminar el proyecto:', error);
+        Swal.fire('Error', 'No se pudo eliminar el proyecto', 'error');
+      },
+    });
+  }
+
   searchProjects(query: string): void {
     if (!query.trim()) {
       this.getAll();
       return;
     }
 
-    const params = new HttpParams().set('q', query);
-
-    this.http.get<ProjectData[]>(ApiRoutes.projects.search, { params }).subscribe({
-      next: (projects) => {
-        const newMap = new Map<number, ProjectData>();
-        if (projects) {
-          projects.forEach(p => newMap.set(p.id, p));
-        }
-        this.state.update(s => ({
-          ...s,
-          projects: newMap,
-          loading: false
-        }));
-      },
-      error: (err) => {
-        console.error('Error al buscar proyectos:', err);
-        this.state.update(s => ({ ...s, loading: false }));
-      }
-    });
+    this.projectListRequests.next(query);
   }
 }

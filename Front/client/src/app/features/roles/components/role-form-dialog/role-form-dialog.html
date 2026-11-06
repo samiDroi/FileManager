@@ -1,0 +1,66 @@
+<div class="role-form">
+  <header class="modal-header">
+    <div>
+      <h2>{{ isEdit ? 'Editar rol' : 'Nuevo rol' }}</h2>
+      <p>Define el rol a partir de los permisos globales del sistema.</p>
+    </div>
+    <button type="button" class="close-icon" (click)="onCancel()" aria-label="Cerrar">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <form [formGroup]="roleForm" class="modal-body" (ngSubmit)="onSubmit()">
+    <app-form-input
+      label="Nombre del rol"
+      placeholder="Ej. Editor de contenido"
+      [control]="roleForm.get('name')!">
+    </app-form-input>
+
+    <div class="input-group">
+      <label for="role-description">Descripción</label>
+      <textarea
+        id="role-description"
+        rows="2"
+        placeholder="Describe qué puede hacer este rol"
+        formControlName="description">
+      </textarea>
+    </div>
+
+    <div class="permissions-section">
+      <div class="permissions-header">
+        <span>Permisos</span>
+        <span class="selected-count">{{ selectedPermissionIds().size }} seleccionados</span>
+      </div>
+
+      @if (data.permissions.length === 0) {
+        <p class="no-permissions">No hay permisos disponibles en el sistema.</p>
+      } @else {
+        <div class="permissions-grid">
+          @for (permission of data.permissions; track permission.id) {
+            <label class="permission-option" [class.selected]="isPermissionSelected(permission.id)">
+              <input
+                type="checkbox"
+                [checked]="isPermissionSelected(permission.id)"
+                (change)="togglePermission(permission.id)">
+              <span class="check-mark"><i class="fa fa-check" aria-hidden="true"></i></span>
+              <span class="permission-copy">
+                <strong>{{ permission.name }}</strong>
+                <small>{{ permission.description || 'Sin descripción' }}</small>
+              </span>
+            </label>
+          }
+        </div>
+      }
+    </div>
+  </form>
+
+  <footer class="modal-footer">
+    <app-cancel-button [label]="'Cancelar'" (clicked)="onCancel()"></app-cancel-button>
+    <app-confirm-button
+      [text]="isEdit ? 'Actualizar rol' : 'Crear rol'"
+      type="button"
+      [isDisabled]="roleForm.invalid"
+      (clicked)="onSubmit()">
+    </app-confirm-button>
+  </footer>
+</div>

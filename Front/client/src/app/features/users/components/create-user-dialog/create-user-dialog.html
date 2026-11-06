@@ -1,0 +1,54 @@
+<section class="create-user-dialog">
+  <header class="dialog-header">
+    <h2>Alta de usuario</h2>
+    <button type="button" class="close-button" aria-label="Cerrar" (click)="dialogRef.close()">&times;</button>
+  </header>
+
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <label class="field">
+      <span>Nombre de usuario</span>
+      <input type="text" formControlName="username" autocomplete="username">
+    </label>
+
+    <label class="field">
+      <span>Correo electrónico</span>
+      <input type="email" formControlName="email" autocomplete="email">
+    </label>
+
+    <label class="field">
+      <span>Contraseña temporal</span>
+      <input type="password" formControlName="password" autocomplete="new-password">
+      <small>Debe contener al menos 6 caracteres.</small>
+    </label>
+
+    <fieldset class="role-options">
+      <legend>Rol asignado</legend>
+      @if (loadingRoles()) {
+        <p>Cargando roles...</p>
+      } @else if (rolesError()) {
+        <p class="error-message">No hay roles disponibles o no se pudieron cargar.</p>
+      } @else {
+        @for (role of roles(); track role.id) {
+          <label class="role-option">
+            <input type="radio" formControlName="role_id" [value]="role.id">
+            <span>
+              <strong>{{ role.name }}</strong>
+              <small>{{ role.description || 'Sin descripción disponible.' }}</small>
+            </span>
+          </label>
+        }
+      }
+    </fieldset>
+
+    <footer class="dialog-actions">
+      @if (submitError()) {
+        <p class="error-message" role="alert">{{ submitError() }}</p>
+      }
+      <button type="button" class="secondary-button" (click)="dialogRef.close()">Cancelar</button>
+      <button type="submit" class="primary-button"
+        [disabled]="registerForm.invalid || registerForm.controls.role_id.value <= 0 || roles().length === 0 || submitting()">
+        {{ submitting() ? 'Creando...' : 'Crear usuario' }}
+      </button>
+    </footer>
+  </form>
+</section>

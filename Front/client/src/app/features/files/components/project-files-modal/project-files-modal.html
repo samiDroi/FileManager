@@ -8,18 +8,22 @@
     @switch (currentView()) {
       
       @case (View.LIST) {
-        <app-create-button 
-          [label]="'Subir nuevo archivo'" 
-          (clicked)="onChangeContent()">  
-        </app-create-button>
+        @if (canCreateFiles()) {
+          <app-create-button 
+            [label]="'Subir nuevo archivo'" 
+            (clicked)="onChangeContent()">  
+          </app-create-button>
+        }
         <app-ui-search-bar (search)="onSearch($event)"></app-ui-search-bar>
         <app-list-files-modal 
           [files]="files()" 
+          [canManageAccess]="canManageAccess()"
           (changeContent)="onChangeContent()"
           (editFile)="onEditFile($event)"
           (deleteFile)="onDeleteFile($event)"
           (downloadFile)="onDownloadFile($event)"
-          (viewFile)="onViewFile($event)">
+          (viewFile)="onViewFile($event)"
+          (manageAccess)="onManageAccess($event)">
         </app-list-files-modal>
       }
 

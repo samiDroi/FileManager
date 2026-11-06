@@ -12,6 +12,7 @@ describe('ListClientsComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ListClientsComponent);
+    fixture.componentRef.setInput('clients', []);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

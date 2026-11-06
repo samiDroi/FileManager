@@ -45,9 +45,12 @@ export class LoginComponent {
     this.errorMessage.set(null);
 
     try {
-      await firstValueFrom(this.authService.login(this.loginForm.getRawValue()));
+      const response = await firstValueFrom(this.authService.login(this.loginForm.getRawValue()));
       this.loginForm.reset();
-      this.router.navigate([AppRoutes.features.dashboard]);
+      const targetRoute = response?.is_admin
+        ? AppRoutes.admin.dashboard
+        : AppRoutes.features.dashboard;
+      this.router.navigate([targetRoute]);
     } catch (error: any) {
       console.error('Error en login:', error);
       

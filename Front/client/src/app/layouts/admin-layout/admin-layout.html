@@ -1,0 +1,52 @@
+<div class="admin-layout">
+  <header class="admin-topbar">
+    <a class="brand" [routerLink]="[routes.dashboard]" aria-label="FileManager, inicio de administración">
+      <span class="brand-icon"><i class="fa fa-cloud" aria-hidden="true"></i></span>
+      <span class="brand-name">FileManager</span>
+      <span class="admin-badge"><i class="fa fa-shield" aria-hidden="true"></i> Panel Admin</span>
+    </a>
+
+    <nav class="admin-navigation" aria-label="Navegación de administración">
+      <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item">
+        <i class="fa fa-file" aria-hidden="true"></i><span>Archivos</span>
+      </a>
+      <a [routerLink]="[routes.projects]" routerLinkActive="active" class="nav-item">
+        <i class="fa fa-folder-open" aria-hidden="true"></i><span>Proyectos</span>
+      </a>
+      <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
+        <i class="fa fa-briefcase" aria-hidden="true"></i><span>Clientes</span>
+      </a>
+      @if (canReadUsers()) {
+        <a [routerLink]="[routes.users]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-users" aria-hidden="true"></i><span>Usuarios</span>
+        </a>
+      }
+      @if (canManageRbac()) {
+        <a [routerLink]="[routes.groups]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-object-group" aria-hidden="true"></i><span>Grupos</span>
+        </a>
+        <a [routerLink]="[routes.roles]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-shield" aria-hidden="true"></i><span>Roles</span>
+        </a>
+      }
+    </nav>
+
+    @let user = currentUser();
+    @if (user) {
+      <div class="user-strip">
+        <div class="user-info">
+          <span class="name">{{ user.username }}</span>
+          <span class="email">{{ user.email }}</span>
+        </div>
+        <span class="user-avatar" aria-hidden="true">{{ user.username.charAt(0) }}</span>
+        <button type="button" class="btn-logout" (click)="handleLogout()" title="Cerrar sesión" aria-label="Cerrar sesión">
+          <i class="fa fa-sign-out" aria-hidden="true"></i>
+        </button>
+      </div>
+    }
+  </header>
+
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

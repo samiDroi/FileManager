@@ -1,35 +1,37 @@
  <div class="header">
-   
-     
     <!-- <button class="btn-back" (click)="goBack()">
       <i class="fa fa-arrow-left"></i> Volver
     </button> -->
     <h2>{{ clientName() }}</h2>
-     
-    <app-create-button 
-      [label]="'+ Nuevo Proyecto'" 
-      (clicked)="openCreateProjectModal()">  
+
+    <app-create-button
+      [label]="'+ Nuevo Proyecto'"
+      (clicked)="openCreateProjectModal()">
     </app-create-button>
   </div>
  <app-ui-search-bar
-    placeholder="Buscar proyectos..." 
+    placeholder="Buscar proyectos..."
       (search)="onSearch($event)">
 
-    </app-ui-search-bar> 
+    </app-ui-search-bar>
 @if(loading()){
   <div class="loading-state" style="padding: 2rem; text-align: center; color: #6b7280;">
     <p>Cargando proyectos...</p>
   </div>
 }@else {
-  
 
-  @if(projects().length === 0){
-    
-    <div class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">
-      <p>No hay proyectos para este cliente.</p>
-    </div>
+
+  @if(clientProjects().length === 0){
+    <app-empty-state
+      class="empty-state--top"
+      imagenUrl="/images/Folder.svg"
+      titulo="Aún no hay proyectos"
+      subtitulo="Crea tu primer proyecto para organizarte."
+      textoBoton="Nuevo Proyecto"
+      (buttonClick)="openCreateProjectModal()">
+    </app-empty-state>
   }@else {
-   
+
     <ng-template #projectRow let-project>
       <td>
         <div class="cell-main-text">{{ project.name }}</div>
@@ -49,20 +51,20 @@
       <button class="btn btn-list" (click)="onGoToFiles(item); closeMenu()">
         <i class="fas fa-clipboard-list"></i>
         Ver Archivos
-        <span class="badge">{{item.count_files }}</span> 
+        <span class="badge">{{item.count_files }}</span>
       </button>
-      <app-edit-button 
-        [label]="'Editar'" 
-        (clicked)="onEditProject(item); closeMenu()">  
+      <app-edit-button
+        [label]="'Editar'"
+        (clicked)="onEditProject(item); closeMenu()">
       </app-edit-button>
     </ng-template>
 
-    <app-ui-table 
-      [data]="projects()" 
-      [rowTemplate]="projectRow" 
+    <app-ui-table
+      [data]="projects()"
+      [rowTemplate]="projectRow"
       [colSpan]="5"
       [menuTemplate]="contextMenu">
-      
+
       <thead>
         <tr>
           <th>Nombre del Proyecto</th>
@@ -72,11 +74,11 @@
           <th>Acciones</th>
         </tr>
       </thead>
-      
+
       <div empty-state>
         <p>No hay proyectos disponibles.</p>
       </div>
-      
+
     </app-ui-table>
   }
 }

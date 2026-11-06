@@ -33,10 +33,18 @@
         Ver Archivos
         <span class="badge">{{item.count_files }}</span> 
       </button>
-      <app-edit-button 
-        [label]="'Editar'" 
-        (clicked)="onEditItem(item); closeMenu()">  
-      </app-edit-button>
+      @if (canEdit()) {
+        <app-edit-button 
+          [label]="'Editar'" 
+          (clicked)="onEditItem(item); closeMenu()">  
+        </app-edit-button>
+      }
+      @if (canDelete()) {
+        <app-delete-button 
+          [label]="'Eliminar'" 
+          (clicked)="onDeleteItem(item); closeMenu()">  
+        </app-delete-button>
+      }
     </ng-template>
 
     <app-ui-table 

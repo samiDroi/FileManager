@@ -1,22 +1,38 @@
-<div class="header">
-  <h2>Gestion de clientes</h2>
-  <app-create-button 
-    [label]="'+ Nuevo Cliente'" 
-    (clicked)="openCreateClientModal()">  
+
+@if(clientsList().length > 0 && canCreateClients()) {
+  <app-create-button
+    [label]="'+ Nuevo Cliente'"
+    (clicked)="openCreateClientModal()">
   </app-create-button>
-</div>
+}
+
 
 <div class="toolbar">
-  <app-ui-search-bar 
-    placeholder="Buscar clientes..." 
+  <app-ui-search-bar
+    placeholder="Buscar clientes..."
     (search)="onSearch($event)">
   </app-ui-search-bar>
 </div>
 
-<app-list-clients 
-  [clients]="clientsList()" 
-  [isLoading]="loading()"
-  (createClient)="openCreateClientModal()"
-  (editClient)="openEditClientModal($event)"
-  (createproject)="openCreateProjectModal($event)">
-</app-list-clients>
+@if (clientsList().length === 0 && !loading()) {
+  <app-empty-state
+    imagenUrl="/images/Search.svg"
+    titulo="No tienes clientes registrados"
+    subtitulo="Añade un cliente para empezar a trabajar."
+    [textoBoton]="canCreateClients() ? 'Nuevo Cliente' : ''"
+    [showButton]="canCreateClients()"
+    (buttonClick)="openCreateClientModal()">
+  </app-empty-state>
+} @else {
+  <app-list-clients
+    [clients]="clientsList()"
+    [isLoading]="loading()"
+    [canCreateProject]="canCreateProjects()"
+    [canEdit]="canEditClients()"
+    [canDelete]="canDeleteClients()"
+    (createClient)="openCreateClientModal()"
+    (editClient)="openEditClientModal($event)"
+    (deleteClient)="onDeleteClient($event)"
+    (createproject)="openCreateProjectModal($event)">
+  </app-list-clients>
+}

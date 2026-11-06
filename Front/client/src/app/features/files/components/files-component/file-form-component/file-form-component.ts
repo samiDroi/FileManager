@@ -10,6 +10,7 @@ import { ConfirmButtonComponent } from '../../../../../shared/components/buttons
 import { FormComponent } from '../../../../typeFiles/components/type-files-component/form-component/form-component';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TypeFiles } from '../../../../typeFiles/services/type-files';
+import { PermissionService } from '../../../../../core/services/permission-service';
 
 @Component({
   selector: 'app-file-form',
@@ -24,6 +25,8 @@ export class FileFormComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<FileFormComponent>, { optional: true });
   private dialogData = inject(MAT_DIALOG_DATA, { optional: true }) as { file?: FileData; fileTypes?: FileTypeRequest[] } | null;
   private fileTypeService = inject(TypeFiles);
+  private permissionService = inject(PermissionService);
+  readonly canCreateFileTypes = computed(() => this.permissionService.can('crear', 'tipos_archivo'));
   projectId = input<number>();
   fileTypes = input<FileTypeRequest[]>([]);
   projects = input<ProjectData[]>([]);

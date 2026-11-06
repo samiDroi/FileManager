@@ -4,7 +4,7 @@
     <ng-content select="thead"></ng-content>
 
     <tbody>
-      @for (item of data(); track $index; let i = $index) {
+      @for (item of data(); track item.id ?? $index; let i = $index) {
         <tr>
           <ng-container *ngTemplateOutlet="rowTemplate(); context: { $implicit: item, $index: i }"></ng-container>
           <td class="actions-cell">

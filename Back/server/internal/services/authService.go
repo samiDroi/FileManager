@@ -1,12 +1,13 @@
 package services
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"server/internal/store/repository"
 
 	"server/internal/domain/models"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,26 +29,27 @@ func (s *AuthService) RegisterUser(ctx echo.Context, user models.User) (*models.
 	user.Password = string(hashedPassword)
 
 	// Le pedimos al store que lo guarde y retorne el usuario con ID asignado.
-	return s.ur.CreateUsers(&user, ctx.Request().Context())
+	createdUser, err := s.ur.CreateUsers(&user, ctx.Request().Context())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.ur.AssignAdminRoleIfMissing(ctx.Request().Context()); err != nil {
+		fmt.Printf("WARN: no se pudo asignar el rol Administrador al usuario inicial: %v\n", err)
+	}
+
+	return createdUser, nil
 }
 
 func (s *AuthService) LoginUser(ctx echo.Context, username string, password string) (*models.User, error) {
 	// Buscamos el usuario por username
-	// fmt.Print(ctx, username)
 	user, err := s.ur.GetUserByUsername(ctx.Request().Context(), username)
 	if err != nil {
-		// Imprime el error exacto en tu consola para que puedas verlo
-		fmt.Printf("ERROR: %v\n", err)
-
-		// Si quieres ser más preciso con la respuesta HTTP:
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, echo.NewHTTPError(401, "Credenciales incorrectas")
 		}
 		return nil, echo.NewHTTPError(500, "Error interno del servidor")
 	}
-	// if err != nil {
-	// 	return nil, echo.NewHTTPError(401, fmt.Sprintf("usuario %s no encontrado", username))
-	// }
 
 	// Validamos la contraseña con bcrypt
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))

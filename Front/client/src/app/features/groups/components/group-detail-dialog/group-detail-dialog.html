@@ -1,0 +1,169 @@
+<div class="group-detail">
+  <header class="detail-header">
+    <div class="detail-title">
+      <span class="detail-icon"><i class="fa fa-users" aria-hidden="true"></i></span>
+      <div>
+        <p class="eyebrow">Grupo</p>
+        <h2>{{ group().name }}</h2>
+        <p class="description">{{ group().description || 'Sin descripción' }}</p>
+      </div>
+    </div>
+
+    <button type="button" class="close-button" (click)="close()" aria-label="Cerrar">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <div class="detail-metrics">
+    <span><i class="fa fa-files-o" aria-hidden="true"></i> {{ files().length }} archivos con acceso</span>
+    <span><i class="fa fa-user-o" aria-hidden="true"></i> {{ users().length }} usuarios en el grupo</span>
+  </div>
+
+  <mat-tab-group animationDuration="150ms" class="group-tabs">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <i class="fa fa-users tab-icon" aria-hidden="true"></i>
+        <span>Usuarios</span>
+        <span class="tab-count">{{ users().length }}</span>
+      </ng-template>
+
+      <div class="tab-content">
+        @if (canManage()) {
+          <div class="add-user-row">
+            <select
+              class="form-select"
+              [ngModel]="selectedUserId()"
+              (ngModelChange)="onUserSelected($event)"
+              aria-label="Seleccionar usuario">
+              <option [ngValue]="null">Selecciona un usuario</option>
+              @for (user of availableUsers(); track user.id) {
+                <option [ngValue]="user.id">{{ user.username }} — {{ user.email }}</option>
+              }
+            </select>
+
+            <select
+              class="form-select role-select"
+              [ngModel]="selectedRoleInGroup()"
+              (ngModelChange)="onRoleSelected($event)"
+              aria-label="Rol dentro del grupo">
+              @for (role of rolesInGroup; track role.value) {
+                <option [value]="role.value">{{ role.label }}</option>
+              }
+            </select>
+
+            <button
+              type="button"
+              class="btn-add"
+              [disabled]="!canAddUser()"
+              (click)="onAddUser()">
+              <i class="fa fa-plus" aria-hidden="true"></i>
+              Agregar
+            </button>
+          </div>
+        }
+
+        @if (loadingUsers()) {
+          <p class="state-message">Cargando usuarios...</p>
+        } @else if (users().length === 0) {
+          <p class="state-message">Este grupo todavía no tiene usuarios.</p>
+        } @else {
+          <ul class="people-list">
+            @for (user of users(); track user.id) {
+              <li class="person-row">
+                <span class="avatar">{{ user.username.charAt(0) }}</span>
+                <div class="person-info">
+                  <strong>{{ user.username }}</strong>
+                  <span>{{ user.email }}</span>
+                </div>
+                <span class="role-badge">{{ roleLabel(user.role_in_group) }}</span>
+                @if (canManage()) {
+                  <button
+                    type="button"
+                    class="remove-button"
+                    title="Quitar del grupo"
+                    aria-label="Quitar del grupo"
+                    (click)="onRemoveUser(user)">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <i class="fa fa-files-o tab-icon" aria-hidden="true"></i>
+        <span>Archivos</span>
+        <span class="tab-count">{{ files().length }}</span>
+      </ng-template>
+
+      <div class="tab-content">
+        @if (canEditFiles() && canManageAccess()) {
+          <div class="add-user-row">
+            <select
+              class="form-select"
+              [ngModel]="selectedFileId()"
+              (ngModelChange)="onFileSelected($event)"
+              aria-label="Seleccionar archivo">
+              <option [ngValue]="null">Selecciona un archivo</option>
+              @for (file of availableFiles(); track file.id) {
+                <option [ngValue]="file.id">{{ file.tittle }} — {{ file.project_name || 'Sin proyecto' }}</option>
+              }
+            </select>
+
+            <select
+              class="form-select role-select"
+              [ngModel]="selectedFileAccess()"
+              (ngModelChange)="onFileAccessSelected($event)"
+              aria-label="Tipo de acceso">
+              @for (type of accessTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+
+            <button
+              type="button"
+              class="btn-add"
+              [disabled]="selectedFileId() === null"
+              (click)="onAddFile()">
+              <i class="fa fa-plus" aria-hidden="true"></i>
+              Agregar
+            </button>
+          </div>
+        }
+
+        @if (loadingFiles()) {
+          <p class="state-message">Cargando archivos...</p>
+        } @else if (files().length === 0) {
+          <p class="state-message">Este grupo todavía no tiene acceso a archivos.</p>
+        } @else {
+          <ul class="file-list">
+            @for (file of files(); track file.id) {
+              <li class="file-row">
+                <span class="file-icon"><i class="fa fa-file-o" aria-hidden="true"></i></span>
+                <div class="file-info">
+                  <strong>{{ file.tittle }}</strong>
+                  <span>{{ file.project_name || 'Sin proyecto' }} · {{ file.file_type || 'Sin tipo' }}</span>
+                </div>
+                <span class="access-badge">{{ file.access_type }}</span>
+                @if (canEditFiles()) {
+                  <button
+                    type="button"
+                    class="remove-button"
+                    title="Revocar acceso"
+                    aria-label="Revocar acceso"
+                    (click)="onRevokeFile(file)">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

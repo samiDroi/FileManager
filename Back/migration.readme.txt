@@ -1,0 +1,192 @@
+========================================================================
+ MIGRACIONES DE BASE DE DATOS CON GOOSE
+ Proyecto: FileManager
+ Carpeta de migraciones: Back/server/db/migrations
+========================================================================
+
+Las migraciones son archivos SQL gestionados por Goose. Cada archivo sigue el
+formato:
+
+    20260401015447_initial_schema.sql
+    <timestamp>_<nombre>.sql
+
+y contiene las secciones "-- +goose Up" y "-- +goose Down".
+
+
+------------------------------------------------------------------------
+ 1. REQUISITOS
+------------------------------------------------------------------------
+
+- PostgreSQL en ejecución.
+- Go 1.25 o superior.
+- CLI de Goose en el PATH (solo para los comandos manuales con goose).
+
+Instalar la CLI de Goose con Go:
+
+    go install github.com/pressly/goose/v3/cmd/goose@latest
+
+Verificar la instalación:
+
+    goose --version
+
+NOTA: El binario se instala en %USERPROFILE%\go\bin (Windows) o
+$HOME/go/bin (Linux/macOS). Asegúrate de que esa ruta esté en el PATH.
+También puedes descargar el binario desde:
+https://github.com/pressly/goose/releases
+
+
+------------------------------------------------------------------------
+ 2. CADENA DE CONEXIÓN
+------------------------------------------------------------------------
+
+Goose necesita la cadena de conexión de PostgreSQL. El proyecto la define en
+la variable de entorno DB_CONN (archivo Back/server/.env).
+
+Formato:
+
+    postgres://USUARIO:PASSWORD@HOST:PUERTO/BASE_DE_DATOS?sslmode=disable
+
+Ejemplo:
+
+    postgres://postgres:mi_password@localhost:5432/FileManagerDB?sslmode=disable
+
+En PowerShell:
+
+    $env:DB_CONN = "postgres://postgres:mi_password@localhost:5432/FileManagerDB?sslmode=disable"
+
+En CMD:
+
+    set DB_CONN=postgres://postgres:mi_password@localhost:5432/FileManagerDB?sslmode=disable
+
+En Bash:
+
+    export DB_CONN="postgres://postgres:mi_password@localhost:5432/FileManagerDB?sslmode=disable"
+
+
+------------------------------------------------------------------------
+ 3. UBICACIÓN DE EJECUCIÓN
+------------------------------------------------------------------------
+
+IMPORTANTE: el parámetro -dir es relativo. Ejecuta los comandos desde la
+carpeta Back/server:
+
+    cd Back/server
+
+Si ejecutas desde otra ruta, usa la ruta completa de las migraciones con -dir.
+
+
+------------------------------------------------------------------------
+ 4. COMANDOS PRINCIPALES (PERSONALIZADOS DEL PROYECTO)
+------------------------------------------------------------------------
+
+El proyecto ejecuta las migraciones con la bandera -migrate definida en
+cmd/api/main.go. Al usarla, main llama a store.RunMigrations(), que abre la
+conexión con DB_CONN y ejecuta goose.Up sobre db/migrations antes de iniciar
+el servidor.
+
+Ejecutar las migraciones y luego iniciar la API:
+
+    cd Back/server
+    go run ./cmd/api -migrate
+
+Compilar el binario y ejecutar las migraciones (Windows):
+
+    cd Back/server
+    go build -o api.exe ./cmd/api
+    .\api.exe -migrate
+
+Compilar el binario y ejecutar las migraciones (Linux/macOS):
+
+    cd Back/server
+    go build -o api ./cmd/api
+    ./api -migrate
+
+Ver las banderas disponibles, incluida -migrate:
+
+    go run ./cmd/api -h
+
+Iniciar el servidor SIN ejecutar migraciones:
+
+    go run ./cmd/api
+
+NOTA: ejecuta estos comandos desde Back/server, porque main carga el archivo
+.env desde el directorio actual y RunMigrations usa la ruta relativa
+db/migrations.
+
+--- Alternativa: comandos manuales con la CLI de Goose ---
+
+Ver el estado de las migraciones (aplicadas / pendientes):
+
+    goose postgres "%DB_CONN%" -dir=db/migrations status
+
+Revertir la última migración aplicada:
+
+    goose postgres "%DB_CONN%" -dir=db/migrations down
+
+Revertir TODAS las migraciones (no borra la base de datos, solo revierte):
+
+    goose postgres "%DB_CONN%" -dir=db/migrations reset
+
+Ver la versión actual de la base de datos:
+
+    goose postgres "%DB_CONN%" -dir=db/migrations version
+
+Aplicar solo una migración específica:
+
+    goose postgres "%DB_CONN%" -dir=db/migrations up-to 20260401015447
+
+Revertir hasta una versión específica:
+
+    goose postgres "%DB_CONN%" -dir=db/migrations down-to 20260401015447
+
+
+------------------------------------------------------------------------
+ 5. CREAR UNA NUEVA MIGRACIÓN
+------------------------------------------------------------------------
+
+Desde Back/server:
+
+    goose -dir=db/migrations create nombre_de_la_migracion sql
+
+Esto genera un archivo con timestamp en Back/server/db/migrations. Edita el
+archivo y completa las secciones:
+
+    -- +goose Up
+    -- SQL para aplicar el cambio
+
+    -- +goose Down
+    -- SQL para revertir el cambio
+
+
+------------------------------------------------------------------------
+ 6. MIGRATE FRESH (REINICIAR TODAS LAS MIGRACIONES)
+------------------------------------------------------------------------
+
+El proyecto incluye scripts que revierten todas las migraciones y las vuelven
+a aplicar pidiendo el password de PostgreSQL:
+
+Windows (CMD):
+
+    Back\server\cmd\migrate-fresh.bat
+
+Linux/macOS:
+
+    ./Back/server/cmd/migrate-fresh.sh
+
+Los scripts usan por defecto:
+
+    host=localhost port=5432 user=postgres dbname=FileManagerDB sslmode=disable
+
+Si tu configuración es distinta, edita el script o usa los comandos manuales
+de la sección 4.
+
+
+------------------------------------------------------------------------
+ 7. NOTAS
+------------------------------------------------------------------------
+
+- Goose crea la tabla goose_db_version para llevar el control de versiones.
+- Los archivos se aplican en orden por su timestamp.
+- No edites migraciones ya aplicadas en otros entornos; crea una nueva.
+- Haz respaldo de la base de datos antes de usar reset en producción.
+- Nunca subas credenciales reales al repositorio; usa variables de entorno.

@@ -1,0 +1,123 @@
+:host {
+  display: block;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  min-height: 50vh;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+
+}
+
+:host(.empty-state--top) .empty-state {
+  min-height: auto;
+  align-items: flex-start;
+  padding: 1rem 2rem 2rem;
+}
+
+.empty-state__card {
+  display: flex;
+  width: min(100%, 36rem);
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  border-radius: 1rem;
+  background-color: #fff;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 10%);
+  text-align: center;
+}
+
+.empty-state__illustration {
+  display: flex;
+  width: 20rem;
+  height: 15rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state__illustration img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.empty-state__title {
+  margin: 0;
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.empty-state__subtitle {
+  margin: 0.75rem 0 1.5rem;
+  color: #64748b;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.empty-state__button {
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background-color: #16a34a;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: background-color 150ms ease;
+}
+
+.empty-state__button:hover {
+  background-color: #15803d;
+}
+
+.empty-state__button:focus-visible {
+  outline: 3px solid #86efac;
+  outline-offset: 3px;
+}
+
+.empty-state__dropzone {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  color: #64748b;
+}
+
+.empty-state__dropzone span:first-child {
+  color: #334155;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+    padding: 1rem;
+  }
+
+  .empty-state__card {
+    padding: 2rem 1.25rem;
+  }
+
+  .empty-state__illustration {
+    width: 9rem;
+    height: 9rem;
+  }
+
+  .empty-state__title {
+    font-size: 1.7rem;
+  }
+
+  .empty-state__subtitle {
+    font-size: 1.05rem;
+  }
+}

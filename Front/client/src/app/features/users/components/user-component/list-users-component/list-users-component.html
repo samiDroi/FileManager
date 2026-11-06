@@ -28,14 +28,18 @@
   <td>{{ user.uploadedFiles }}</td>
 </ng-template>
  <ng-template #contextMenu let-item let-closeMenu="close">
-        <app-edit-button 
-          [label]="'Editar'" 
-          (clicked)="onEdit(item); closeMenu()">  
-        </app-edit-button>
-        <app-delete-button 
-          [label]="'Eliminar'" 
-          (clicked)="onDelete(item); closeMenu()">  
-        </app-delete-button>
+        @if (canEdit()) {
+          <app-edit-button 
+            [label]="'Editar'" 
+            (clicked)="onEdit(item); closeMenu()">  
+          </app-edit-button>
+        }
+        @if (canDelete()) {
+          <app-delete-button 
+            [label]="'Eliminar'" 
+            (clicked)="onDelete(item); closeMenu()">  
+          </app-delete-button>
+        }
     </ng-template>
 <!-- <ng-template #contextMenu let-user>
   <button (click)="onEdit(user)">Edit</button>

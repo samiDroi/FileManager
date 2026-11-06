@@ -8,10 +8,12 @@ import { ClientFormComponent } from './client-form-component/client-form-compone
 import { FormComponent } from '../../../project/projects-component/form-component/form-component';
 import { ClientData } from '../../../../core/domain/dtos';
 import { projectService } from '../../../project/services/project-service';
+import { EmptyStateComponent } from '../../../../shared/components';
+import { PermissionService } from '../../../../core/services/permission-service';
 
 @Component({
   selector: 'app-clients-component',
-  imports: [ListClientsComponent, UiSearchBarComponent, CreateButton],
+  imports: [ListClientsComponent, UiSearchBarComponent, CreateButton, EmptyStateComponent],
   templateUrl: './clients-component.html',
   styleUrl: './clients-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,10 +22,15 @@ export class ClientsComponent implements OnInit {
   protected clientService = inject(ClientService);
   private clientsMap = computed(() => this.clientService.state().clients);
   private dialog = inject(MatDialog);
-  private projectService = inject(projectService)
+  private projectService = inject(projectService);
+  private permissionService = inject(PermissionService);
   clientsList = computed(() => Array.from(this.clientsMap().values()));
 
   loading = computed(() => this.clientService.state().loading);
+  canCreateClients = computed(() => this.permissionService.can('crear', 'clientes'));
+  canEditClients = computed(() => this.permissionService.can('editar', 'clientes'));
+  canDeleteClients = computed(() => this.permissionService.can('eliminar', 'clientes'));
+  canCreateProjects = computed(() => this.permissionService.can('crear', 'proyectos'));
 
   ngOnInit(): void {
     this.clientService.getAllClients();
@@ -57,6 +64,10 @@ export class ClientsComponent implements OnInit {
         this.clientService.updateClient(clientToEdit.id, updatedClient);
       }
     });
+  }
+
+  onDeleteClient(client: ClientData): void {
+    void this.clientService.deleteClient(client);
   }
 
   openCreateProjectModal(client: ClientData): void {

@@ -1,19 +1,26 @@
-<aside class="sidebar-container">
-  <div class="brand">
-    <h1><i class="fa fa-cloud"></i> File Manager</h1>
+<aside class="sidebar-container" [class.collapsed]="collapsed()">
+  <div class="brand" (click)="handleNavigation()" [attr.title]="collapsed() ? 'File Manager' : null">
+    <h1><i class="fa fa-cloud"></i> <span class="brand-text">File Manager</span></h1>
   </div>
 
   <div class="sidebar-section">
     <span class="section-label">Vistas Globales</span>
     <nav class="nav-menu">
-      <a [routerLink]="[routes.files]" class="nav-item">
+      <a [routerLink]="[routes.files]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Archivos' : null">
         <i class="fa fa-file"></i> <span class="label">Todos los Archivos</span>
       </a>
-      <a [routerLink]="[routes.projects]" class="nav-item">
+      <a [routerLink]="[routes.projects]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Proyectos' : null">
         <i class="fa fa-folder-open"></i> <span class="label">Todos los Proyectos</span>
       </a>
-      <a [routerLink]="[routes.clients]" class="nav-item">
+      <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Clientes' : null">
         <i class="fa fa-briefcase"></i> <span class="label">Todos los Clientes</span>
+      </a>
+      <a [routerLink]="[routes.groups]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Mis Grupos' : null">
+        <i class="fa fa-object-group"></i> <span class="label">Mis Grupos</span>
       </a>
     </nav>
   </div>
@@ -24,10 +31,14 @@
     
     <div class="clients-header">
       <span class="section-label">Mis Clientes</span>
-      <app-create-button 
-        [label]="'+ Nuevo Cliente'" 
-        (clicked)="emitCreateClient()">  
-      </app-create-button>
+      @if (projectsLoaded() && hasProjects() && canCreateClients()) {
+        <app-create-button
+          [label]="'+ Nuevo Cliente'"
+          (clicked)="emitCreateClient()">
+        </app-create-button>
+      } @else if (projectsLoaded()) {
+        <span class="dependency-notice">Debes crear un proyecto primero</span>
+      }
     </div>
 
     <div class="search-container">
@@ -37,8 +48,9 @@
     
 
     <div class="clients-scroll-area">
-      @for (client of filteredClients; track $index) {
-        <div class="client-item" [routerLink]="['/overview/client', client.id]">
+      @for (client of filteredClients; track client.id) {
+        <div class="client-item" [routerLink]="['/overview/client', client.id]" routerLinkActive="active"
+          (click)="handleNavigation()" [attr.title]="collapsed() ? client.name : null">
           <div class="client-summary">
             <i class="fa fa-building"></i> <span>{{ client.name }}</span>
           </div>
@@ -48,7 +60,8 @@
   </div>
 
   <div class="sidebar-footer">
-    <a routerLink="/configuracion" class="nav-item">
+    <a routerLink="/configuracion" class="nav-item" (click)="handleNavigation()"
+      [attr.title]="collapsed() ? 'Configuración' : null">
       <i class="fa fa-cog"></i> <span class="label">Configuración</span>
     </a>
 

@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { TopbarTitleService } from '../../../../core/services';
 import { NgTemplateOutlet } from '@angular/common'; // <-- Import corregido
 import { FileService } from '../../services';
 import { FileRequest, FileData, ProjectData } from '../../../../core';
@@ -14,6 +15,8 @@ import { UiSearchBarComponent } from '../../../../shared/components/search-bar/u
 import { MatDialog } from '@angular/material/dialog';
 import { TypeFiles } from '../../../typeFiles/services/type-files';
 import Swal from 'sweetalert2';
+import { PermissionService } from '../../../../core/services/permission-service';
+import { FileAccessDialog } from '../file-access-dialog/file-access-dialog';
 
 
 export enum DynamicContent {
@@ -35,8 +38,13 @@ export class ProjectFilesModalComponent implements OnInit {
   private fileService = inject(FileService);
   private modalRef = inject(MatDialogRef<ProjectFilesModalComponent>);
   private editDialog = inject(MatDialog);
+  private topbarTitleService = inject(TopbarTitleService);
+  private destroyRef = inject(DestroyRef);
+  private permissionService = inject(PermissionService);
   protected data = inject(MAT_DIALOG_DATA);
   private fileTypeService = inject(TypeFiles);
+  protected readonly canCreateFiles = computed(() => this.permissionService.can('crear', 'archivos'));
+  protected readonly canManageAccess = computed(() => this.permissionService.can('otorgar', 'accesos'));
   // 1. Exponemos el enum al template para usarlo en el @switch
   readonly View = DynamicContent;
 
@@ -50,11 +58,24 @@ export class ProjectFilesModalComponent implements OnInit {
   loading = computed(() => this.fileService.state().loading);
   
   ngOnInit(): void {
-    const projectId = this.data?.project?.id;
+    const project = this.data?.project;
+    const projectId = project?.id;
+
+    if (project) {
+      this.topbarTitleService.setProjectBreadcrumb({
+        clientName: project.client_name ?? '',
+        projectName: project.name ?? '',
+      });
+    }
+
     if (projectId) {
       this.fileService.getByProjectId(projectId);
       this.fileTypeService.getFileTypes();
     }
+  }
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.topbarTitleService.clearProjectBreadcrumb());
   }
 
   // --- MÉTODOS DE NAVEGACIÓN Y ESTADO ---
@@ -71,9 +92,16 @@ export class ProjectFilesModalComponent implements OnInit {
   }
 
   onUploadFile(file: FileRequest) {
-    this.fileService.uploadFile(file);
-    console.log('Archivo subido:', file);
-    this.currentView.set(DynamicContent.LIST); // Volvemos a la lista después de subir
+    this.fileService.uploadFile(file, createdFile => {
+      this.currentView.set(DynamicContent.LIST);
+      if (this.canManageAccess()) {
+        this.editDialog.open(FileAccessDialog, {
+          width: '640px',
+          maxWidth: '95vw',
+          data: { file: createdFile, afterUpload: true },
+        });
+      }
+    });
   }
 
   // --- OTROS MÉTODOS ---
@@ -141,6 +169,14 @@ export class ProjectFilesModalComponent implements OnInit {
   onSaveTypes(types: {name: string}[]): void {
     
   }
+  onManageAccess(file: FileData): void {
+    this.editDialog.open(FileAccessDialog, {
+      width: '640px',
+      maxWidth: '95vw',
+      data: { file },
+    });
+  }
+
   onSearch(query: string): void {
     this.fileService.onSearch(query);
   }

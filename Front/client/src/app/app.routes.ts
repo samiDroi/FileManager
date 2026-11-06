@@ -1,7 +1,7 @@
 import { Router, Routes } from '@angular/router';
 import { AppRoutes } from './core/routes/appRoutes';
-import { AuthLayout, MainLayout } from './layouts';
-import { authGuard, guestGuard } from './core/guards';
+import { AdminLayout, AuthLayout, MainLayout } from './layouts';
+import { adminGuard, authGuard, guestGuard, rbacGuard } from './core/guards';
 import { AuthStateService } from './auth/auth-state.service';
 import { inject } from '@angular/core/primitives/di';
 
@@ -53,6 +53,43 @@ export const routes: Routes = [
                 }
            ]
        },
+       {
+        path: '',
+        component: AdminLayout,
+        canActivate: [authGuard, adminGuard],
+        children: [
+            {
+                path: AppRoutes.admin.dashboard,
+                loadComponent: () => import('./features/dashboard/dashboard-component/dashboard-component').then(m => m.DashboardComponent)
+            },
+            {
+                path: AppRoutes.admin.users,
+                loadComponent: () => import('./features/users/components/user-component/user-component').then(m => m.UserComponent)
+            },
+            {
+                path: AppRoutes.admin.files,
+                loadComponent: () => import('./features/files/components/files-component/files-component').then(m => m.FilesComponent)
+            },
+            {
+                path: AppRoutes.admin.clients,
+                loadComponent: () => import('./features/clients/components/clients-component/clients-component').then(m => m.ClientsComponent)
+            },
+            {
+                path: AppRoutes.admin.projects,
+                loadComponent: () => import('./features/project/projects-component/projects-component').then(m => m.projectsComponent)
+            },
+            {
+                path: AppRoutes.admin.groups,
+                canActivate: [rbacGuard],
+                loadComponent: () => import('./features/groups/components/groups-component/groups-component').then(m => m.GroupsComponent)
+            },
+            {
+                path: AppRoutes.admin.roles,
+                canActivate: [rbacGuard],
+                loadComponent: () => import('./features/roles/components/roles-component/roles-component').then(m => m.RolesComponent)
+            }
+        ]
+       },
        //lazy loading dashboard module
        {
         path: AppRoutes.features.dashboard,
@@ -80,7 +117,12 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/files/components/files-component/files-component').then(m => m.FilesComponent)
             },
             {
+                path: AppRoutes.features.groups,
+                loadComponent: () => import('./features/groups/components/groups-component/groups-component').then(m => m.GroupsComponent)
+            },
+            {
                 path: 'client/:id',
+                pathMatch: 'full',
                 loadComponent: () => import('./features/project/dynamic-list-component/dynamic-list-component').then(m => m.DynamicListComponent)
             }
         ]

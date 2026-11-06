@@ -7,24 +7,39 @@ import { CreateButton } from '../../../shared/components/buttons/create-button/c
 import { projectService } from '../services';
 import { ProjectData } from '../../../core';
 import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
+import { EmptyStateComponent } from '../../../shared/components';
+import { ClientService } from '../../clients/services';
+import { Router } from '@angular/router';
+import { AppRoutes } from '../../../core/routes/appRoutes';
+import { PermissionService } from '../../../core/services/permission-service';
 
 @Component({
   selector: 'app-projects-component',
-  imports: [ListProjects, UiSearchBarComponent, CreateButton],
+  imports: [ListProjects, UiSearchBarComponent, CreateButton, EmptyStateComponent],
   templateUrl: './projects-component.html',
   styleUrl: './projects-component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class projectsComponent implements OnInit {
   private projectService = inject(projectService);
+  private clientService = inject(ClientService);
+  private router = inject(Router);
+  private permissionService = inject(PermissionService);
   protected modal = inject(MatDialog);
+
+  protected readonly canCreateProjects = computed(() => this.permissionService.can('crear', 'proyectos'));
+  protected readonly canEditProjects = computed(() => this.permissionService.can('editar', 'proyectos'));
+  protected readonly canDeleteProjects = computed(() => this.permissionService.can('eliminar', 'proyectos'));
 
   projectsMap = computed(() => this.projectService.state().projects);
   projectsList = computed(() => Array.from(this.projectsMap().values()));
   loading = computed(() => this.projectService.state().loading);
+  clientsLoading = computed(() => this.clientService.state().loading);
+  hasClients = computed(() => this.clientService.state().clients.size > 0);
 
   ngOnInit(): void {
     this.projectService.getAll(); 
+    this.clientService.getAllClients();
   }
 
   onSearch(query: string): void {
@@ -43,9 +58,17 @@ export class projectsComponent implements OnInit {
           name: newProject.name,
           client_id: newProject.client_id
         });
-        this.projectService.getAll();
       }
     });
+  }
+
+  onEmptyStateClick(): void {
+    if (!this.hasClients()) {
+      this.router.navigate(['/', AppRoutes.features.dashboard, AppRoutes.features.clients]);
+      return;
+    }
+
+    this.openCreateProjectModal();
   }
 
   openEditProjectModal(project: ProjectData): void {
@@ -58,9 +81,12 @@ export class projectsComponent implements OnInit {
       if (updatedProject) {
         console.log('Actualizar proyecto:', updatedProject);
         this.projectService.onUpdate(updatedProject.id, updatedProject);
-        this.projectService.getAll();
       }
     });
+  }
+
+  onDeleteProject(project: ProjectData): void {
+    void this.projectService.onDelete(project);
   }
 
   openFilesModal(project: ProjectData): void {

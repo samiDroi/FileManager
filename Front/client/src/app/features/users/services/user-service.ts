@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { UserData } from '../../../core/domain/dtos/user';
+import { CreateUserRequest, CreatedUserData, UpdateUserRequest, UserData } from '../../../core/domain/dtos/user';
 import { ApiRoutes } from '../../../core/routes';
 import Swal from '../../../shared/utils/swal';
+import { Observable } from 'rxjs';
 
 
 @Injectable({
@@ -10,14 +11,40 @@ import Swal from '../../../shared/utils/swal';
 })
 export class UserService {
   private http = inject(HttpClient);
+  private usersRequestVersion = 0;
   state = signal({
     users: new Map<number, UserData>(),
     loading: false
   })
 
-  getAllUsers(): void {
-    this.http.get<UserData[]>(ApiRoutes.users.getAll, { withCredentials: true }).subscribe({
+  createUser(request: CreateUserRequest): Observable<CreatedUserData> {
+    return this.http.post<CreatedUserData>(ApiRoutes.users.create, request);
+  }
+
+  getUserDetails(userId: number): Observable<UserData> {
+    return this.http.get<UserData>(ApiRoutes.users.getById(userId));
+  }
+
+  updateUser(userId: number, request: UpdateUserRequest): Observable<UserData> {
+    return this.http.put<UserData>(ApiRoutes.users.update(userId), request);
+  }
+
+  upsertUser(user: UserData): void {
+    this.usersRequestVersion++;
+    this.state.update(current => {
+      const users = new Map(current.users);
+      users.set(user.id, user);
+      return { ...current, users };
+    });
+  }
+
+  getAllUsers(endpoint = ApiRoutes.users.getAll): void {
+    const requestVersion = ++this.usersRequestVersion;
+    this.http.get<UserData[]>(endpoint, { withCredentials: true }).subscribe({
       next: (users) => {
+        if (requestVersion !== this.usersRequestVersion) {
+          return;
+        }
         const usersMap = new Map<number, UserData>();
         if (users) {
           users.forEach(user => usersMap.set(user.id, user));
@@ -31,25 +58,8 @@ export class UserService {
     });
   }
 
-  editUser(user: UserData): void{
-    this.http.put<UserData>(ApiRoutes.users.update(user.id), user, { withCredentials: true }).subscribe({
-      next:(updatedUser) => {
-        const currentState = this.state();
-        const updatedUsers = new Map(currentState.users);
-        updatedUsers.set(updatedUser.id, updatedUser);
-        this.state.set({ ...currentState, users: updatedUsers });
-        Swal.fire({
-          icon: 'success',
-          title: 'Usuario actualizado',
-          text: 'El usuario se ha actualizado correctamente',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      },
-      error: (err) => {
-        console.error('Error al editar usuario:', err);
-      }
-    });
+  getAssignableUsers(): void {
+    this.getAllUsers(ApiRoutes.users.assignable);
   }
 
   async deleteUser(userId: number): Promise<void> {
@@ -90,8 +100,12 @@ export class UserService {
       this.getAllUsers();
       return;
     }
+    const requestVersion = ++this.usersRequestVersion;
     this.http.get<UserData[]>(ApiRoutes.users.search(query), { withCredentials: true }).subscribe({
       next: (users) => {
+        if (requestVersion !== this.usersRequestVersion) {
+          return;
+        }
         const usersMap = new Map<number, UserData>();
         if (users) {
           users.forEach(user => usersMap.set(user.id, user));
