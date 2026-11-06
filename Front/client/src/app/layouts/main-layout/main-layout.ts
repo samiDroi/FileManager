@@ -10,6 +10,7 @@ import { ClientService } from '../../features/clients/services';
 import { projectService } from '../../features/project/services';
 import { MatDialog } from '@angular/material/dialog';
 import { ClientFormComponent } from '../../features/clients/components/clients-component/client-form-component/client-form-component';
+import { PermissionService } from '../../core/services/permission-service';
 
 @Component({
   selector: 'app-main-layout',
@@ -23,6 +24,7 @@ export class MainLayout implements OnInit {
   private clientService = inject(ClientService)
   private projectService = inject(projectService);
   private topbarTitleService = inject(TopbarTitleService);
+  private permissionService = inject(PermissionService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
@@ -41,6 +43,8 @@ export class MainLayout implements OnInit {
   );
 
   clients = computed(() => Array.from(this.clientService.state().clients.values()));
+  protected hasProjects = computed(() => this.projectService.state().projects.size > 0);
+  protected projectsLoaded = computed(() => !this.projectService.state().loading);
 
   protected pageTitle = computed(() => {
     const projectContext = this.topbarTitleService.projectContext();
@@ -106,7 +110,9 @@ export class MainLayout implements OnInit {
   }
 
   ngOnInit(): void {
+    this.permissionService.load().subscribe();
     this.clientService.getAllClients();
+    this.projectService.getAll();
   }
 
   private isViewportNarrow(): boolean {

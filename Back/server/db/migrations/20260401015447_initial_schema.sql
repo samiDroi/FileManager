@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS public."files"
 (
     id bigserial PRIMARY KEY,
     type_id integer NOT NULL,
-    tittle character varying(200) NOT NULL,
+    title character varying(200) NOT NULL,
     year integer NOT NULL,
     path character varying(300) NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -278,7 +278,25 @@ CREATE TABLE IF NOT EXISTS public."files_groups"
     updated_by integer NOT NULL,
     PRIMARY KEY (file_id, group_id)
 );
+CREATE TABLE IF NOT EXISTS public."sessions"
+(
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token_hash VARCHAR(64) UNIQUE NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
 
+    CONSTRAINT sessions_user_id_fkey
+        FOREIGN KEY(user_id)
+        REFERENCES public."user" (id) ON DELETE CASCADE
+);
+
+-- Índice para buscar todas las sesiones activas de un usuario (para la vista de "Dispositivos")
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 -- 5. LLAVES FORÁNEAS DE TABLAS BASE ORIGINALES
 ALTER TABLE public."clients" ADD FOREIGN KEY (created_by) REFERENCES public."user" (id);
 ALTER TABLE public."clients" ADD FOREIGN KEY (updated_by) REFERENCES public."user" (id);
@@ -358,6 +376,7 @@ DROP TABLE IF EXISTS public."contact_info" CASCADE;
 DROP TABLE IF EXISTS public."projects" CASCADE;
 DROP TABLE IF EXISTS public."file_types" CASCADE;
 DROP TABLE IF EXISTS public."clients" CASCADE;
+DROP TABLE IF EXISTS public."sessions" CASCADE;
 DROP TABLE IF EXISTS public."user" CASCADE;
 
 -- 4. Eliminar tipos ENUM

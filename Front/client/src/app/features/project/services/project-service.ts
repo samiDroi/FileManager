@@ -69,6 +69,7 @@ export class projectService {
             loading: false
           };
         });
+        this.getAll();
         Swal.fire({
           icon: 'success',
           title: 'Proyecto creado',
@@ -109,6 +110,44 @@ export class projectService {
         this.state.update(s => ({ ...s, loading: false }));
       }
     })
+  }
+
+  async onDelete(project: ProjectData): Promise<void> {
+    const result = await Swal.fire({
+      title: '¿Eliminar proyecto?',
+      text: `Se eliminará el proyecto "${project.name}" y sus archivos dejarán de mostrarse.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    this.http.delete<void>(ApiRoutes.projects.delete(project.id)).subscribe({
+      next: () => {
+        this.state.update(current => {
+          const projects = new Map(current.projects);
+          projects.delete(project.id);
+          return { ...current, projects };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Proyecto eliminado',
+          text: 'El proyecto se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: error => {
+        console.error('Error al eliminar el proyecto:', error);
+        Swal.fire('Error', 'No se pudo eliminar el proyecto', 'error');
+      },
+    });
   }
 
   searchProjects(query: string): void {

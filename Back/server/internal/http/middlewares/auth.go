@@ -3,12 +3,14 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
-	// IMPORTANTE: Cambia estas rutas por las de tu projecto
 	"server/internal/domain/models"
 	"server/internal/http/api"
+	"server/internal/store/repository"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 )
@@ -64,29 +66,23 @@ func GetSessionUser(c echo.Context) (models.UserSession, bool) {
 // Middleware para proteger rutas (Solo usuarios logueados)
 func IsAuthenticated(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// 1. Obtener la cookie HttpOnly
-		cookie, err := c.Cookie("session_token") // "token" es el nombre que le pusiste al crearla
-		if err != nil {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Cookie no encontrada"})
+		authorization := strings.TrimSpace(c.Request().Header.Get(echo.HeaderAuthorization))
+		scheme, tokenString, ok := strings.Cut(authorization, " ")
+		if !ok || !strings.EqualFold(scheme, "Bearer") || strings.TrimSpace(tokenString) == "" {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token de acceso no encontrado"})
 		}
 
-		tokenString := cookie.Value
-
-		// 2. Validar el JWT (Aquí usas tu función de validación de JWT)
-		// claims es un struct donde guardaste el UserID y Username
 		claims, err := api.ValidateToken(tokenString)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token inválido"})
 		}
 
-		// 3. Crear el objeto UserSession con los datos del Token
 		userSess := models.UserSession{
 			UserID:          claims.UserID,
 			Username:        claims.Username,
 			IsAuthenticated: true,
 		}
 
-		// 4. Inyectar en el contexto (esto lo mantienes igual, es excelente)
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		ctx := context.WithValue(c.Request().Context(), "user", userSess)
@@ -94,6 +90,60 @@ func IsAuthenticated(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return next(c)
 	}
+}
+
+func RequireAdmin(db *pgxpool.Pool) echo.MiddlewareFunc {
+	roleRepo := repository.NewRoleRepository(db)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			userID, ok := authenticatedUserID(c)
+			if !ok {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Usuario no autenticado")
+			}
+
+			isAdmin, err := roleRepo.IsAdmin(c.Request().Context(), userID)
+			if err != nil {
+				c.Logger().Errorf("No se pudo validar el rol administrador del usuario %d: %v", userID, err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "No se pudo validar el acceso")
+			}
+			if !isAdmin {
+				return echo.NewHTTPError(http.StatusForbidden, "Se requiere el rol administrador")
+			}
+			return next(c)
+		}
+	}
+}
+
+func RequirePermission(db *pgxpool.Pool, resource, action string) echo.MiddlewareFunc {
+	roleRepo := repository.NewRoleRepository(db)
+	permission := strings.TrimSpace(resource) + "." + strings.TrimSpace(action)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if strings.TrimSpace(resource) == "" || strings.TrimSpace(action) == "" {
+				return echo.NewHTTPError(http.StatusInternalServerError, "Middleware de permisos mal configurado")
+			}
+
+			userID, ok := authenticatedUserID(c)
+			if !ok {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Usuario no autenticado")
+			}
+
+			allowed, err := roleRepo.HasPermission(c.Request().Context(), userID, permission)
+			if err != nil {
+				c.Logger().Errorf("No se pudo validar el permiso %s del usuario %d: %v", permission, userID, err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "No se pudo validar el acceso")
+			}
+			if !allowed {
+				return echo.NewHTTPError(http.StatusForbidden, "No cuentas con el permiso "+permission)
+			}
+			return next(c)
+		}
+	}
+}
+
+func authenticatedUserID(c echo.Context) (int, bool) {
+	userID, ok := c.Get("user_id").(int)
+	return userID, ok && userID > 0
 }
 
 // func IsAuthenticated(next echo.HandlerFunc) echo.HandlerFunc {

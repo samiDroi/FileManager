@@ -30,13 +30,18 @@ export class DynamicListComponent {
   protected modal = inject(MatDialog);
 
   clientId = toSignal(
-    this.route.params.pipe(map(p => Number(p['id']))),
-    { initialValue: 0 }
+    this.route.paramMap.pipe(
+      map(params => {
+        const id = Number(params.get('id'));
+        return Number.isInteger(id) && id > 0 ? id : null;
+      })
+    ),
+    { initialValue: null }
   );
 
   clientName = computed(() => {
     const id = this.clientId();
-    if (!id) return '';
+    if (id === null) return '';
     const clients = this.clientService.stateWithProjects().clientsWithProjects;
     const client = clients.find(c => c.id === id);
     return client?.name ?? '';
@@ -44,12 +49,20 @@ export class DynamicListComponent {
 
   allProjects = computed(() => Array.from(this.projectService.state().projects.values()));
   loading = computed(() => this.projectService.state().loading);
+  searchQuery = signal('');
+
+  protected clientProjects = computed(() => {
+    const id = this.clientId();
+    if (id === null) return [];
+    return this.allProjects().filter(project => Number(project.client_id) === id);
+  });
 
   projects = computed(() => {
-    const id = this.clientId();
-    if (!id) return [];
-    //FILTER PROJECTS BY CLIENT ID, CAUSE THE PROJECTDATA ALREADY HAS THE CLIENT ID
-    return this.allProjects().filter(p => p.client_id === id);
+    const query = this.searchQuery().trim().toLocaleLowerCase();
+    if (!query) return this.clientProjects();
+    return this.clientProjects().filter(project =>
+      `${project.name} ${project.client_name}`.toLocaleLowerCase().includes(query)
+    );
   });
 
   constructor() {
@@ -98,6 +111,6 @@ export class DynamicListComponent {
     });
   }
   onSearch(query: string): void {
-    this.projectService.searchProjects(query);
+    this.searchQuery.set(query);
   }
 }

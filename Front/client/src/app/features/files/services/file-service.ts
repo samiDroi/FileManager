@@ -1,7 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ApiRoutes } from '../../../core/routes/apiUrls';
-import { FileRequest, FileData, FileUpdateRequest } from '../../../core';
+import {
+  FileRequest,
+  FileData,
+  FileUpdateRequest,
+  FileAccessData,
+  GrantFileGroupAccessRequest,
+  GrantFileUserAccessRequest,
+} from '../../../core';
 import { FileType } from '../../../core/domain/models';
 import { Observable, catchError, EMPTY, map, tap } from 'rxjs';
 import { FileTypeRequest } from '../../../core/domain/dtos/fileType';
@@ -177,7 +184,7 @@ async deleteFile(file: FileData): Promise<void> {
       }
     })
   }
-uploadFile(fileRequest: FileRequest) {
+  uploadFile(fileRequest: FileRequest, onUploaded?: (file: FileData) => void) {
     this.state.update(s => ({ ...s, loading: true }));
 
     const projectId = fileRequest.project_id;
@@ -208,14 +215,15 @@ uploadFile(fileRequest: FileRequest) {
     ).subscribe({
       next: (newFile) => {
         this.invalidateLoads();
+        const fileType = this.state().fileTypes.find(ft => ft.id === fileRequest.type_id);
+        const resolvedFile = fileType ? { ...newFile, file_type: fileType.name } : newFile;
+
         this.state.update(s => {
-          const fileType = s.fileTypes.find(ft => ft.id === fileRequest.type_id);
-          const resolvedFile = fileType ? { ...newFile, file_type: fileType.name } : newFile;
           const updatedMap = new Map(s.filesByProject);
           const projectIdKey = fileRequest.project_id ?? 0;
           const currentFiles = updatedMap.get(projectIdKey) ?? [];
           updatedMap.set(projectIdKey, [...currentFiles, resolvedFile]);
-          
+
           return {
             ...s,
             filesByProject: updatedMap,
@@ -240,11 +248,72 @@ uploadFile(fileRequest: FileRequest) {
           timer: 2000,
           showConfirmButton: false
         });
+        onUploaded?.(resolvedFile);
       }
     });
   }
+  getFileAccess(fileId: number): Observable<FileAccessData> {
+    return this.http.get<FileAccessData>(ApiRoutes.files.access(fileId));
+  }
+
+  grantUserAccess(fileId: number, request: GrantFileUserAccessRequest): Observable<void> {
+    return this.http.post<void>(ApiRoutes.files.grantUserAccess(fileId), request);
+  }
+
+  revokeUserAccess(fileId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(ApiRoutes.files.revokeUserAccess(fileId, userId));
+  }
+
+  grantGroupAccess(fileId: number, request: GrantFileGroupAccessRequest): Observable<void> {
+    return this.http.post<void>(ApiRoutes.files.grantGroupAccess(fileId), request);
+  }
+
+  revokeGroupAccess(fileId: number, groupId: number): Observable<void> {
+    return this.http.delete<void>(ApiRoutes.files.revokeGroupAccess(fileId, groupId));
+  }
+
   downloadFile(fileId: number): void {
-    window.open(ApiRoutes.files.download(fileId), '_blank');
+    this.http.get(ApiRoutes.files.download(fileId), {
+      observe: 'response',
+      responseType: 'blob'
+    }).subscribe({
+      next: response => {
+        if (!response.body) {
+          console.error('La respuesta de descarga no contiene un archivo.');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al descargar archivo',
+            text: 'No se pudo descargar el archivo.'
+          });
+          return;
+        }
+
+        const contentDisposition = response.headers.get('Content-Disposition') ?? '';
+        const encodedFilename = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+        let filename = `file-${fileId}`;
+        try {
+          filename = encodedFilename
+            ? decodeURIComponent(encodedFilename)
+            : contentDisposition.match(/filename="?([^";]+)"?/i)?.[1] ?? filename;
+        } catch (error) {
+          console.error('Error al obtener el nombre del archivo:', error);
+        }
+        const objectUrl = URL.createObjectURL(response.body);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = filename;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl));
+      },
+      error: error => {
+        console.error('Error al descargar archivo:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al descargar archivo',
+          text: 'No se pudo descargar el archivo.'
+        });
+      }
+    });
   }
   // onSearch(query: string) {
   //   const params = new HttpParams().set('q', query);

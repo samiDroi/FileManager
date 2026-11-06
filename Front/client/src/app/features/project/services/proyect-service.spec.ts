@@ -60,7 +60,7 @@ describe('projectService', () => {
     expect(service.state().loading).toBe(false);
   });
 
-  it('should keep a newly created project in the local state', () => {
+  it('should refresh the project list after creating a project', () => {
     service.getAll();
     httpMock.expectOne('http://localhost:4100/project').flush([]);
 
@@ -74,6 +74,19 @@ describe('projectService', () => {
       created_at: '2026-01-01T00:00:00Z',
     });
 
+    const refreshedProjects = httpMock.expectOne('http://localhost:4100/project');
+    refreshedProjects.flush([
+      {
+        id: 3,
+        name: 'Nuevo proyecto',
+        client_id: 1,
+        client_name: 'Cliente',
+        count_files: 0,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ]);
+
     expect(service.state().projects.get(3)?.name).toBe('Nuevo proyecto');
+    expect(service.state().loading).toBe(false);
   });
 });

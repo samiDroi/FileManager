@@ -13,5 +13,6 @@ export class EmptyStateComponent {
   @Input() subtitulo: string = '';
   @Input() textoBoton: string = '';
   @Input() imagenUrl: string = '';
+  @Input() showButton = true;
   @Output() buttonClick = new EventEmitter<void>();
 }

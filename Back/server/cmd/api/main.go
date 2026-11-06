@@ -16,6 +16,7 @@ import (
 	"server/internal/config"
 	"server/internal/routes"
 	"server/internal/store"
+	"server/internal/store/repository"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -58,11 +59,32 @@ func main() {
 		AllowOrigins:     origins,
 		AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		ExposeHeaders:    []string{echo.HeaderContentDisposition},
 		AllowCredentials: true,
 	}))
 	// 2. Middlewares Globales
 	e.Use(middleware.RequestLogger()) // Para ver qué pasa en la consola
 	e.Use(middleware.Recover())       // Para que el servidor no muera si hay un error grave
+	e.Use(middleware.Secure())
+
+	sessionRepo := repository.NewSessionRepository(db)
+	cleanupCtx, stopSessionCleanup := context.WithCancel(context.Background())
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-cleanupCtx.Done():
+				return
+			case <-ticker.C:
+				if deleted, err := sessionRepo.DeleteExpired(context.Background(), time.Now()); err != nil {
+					log.Printf("Error limpiando sesiones expiradas: %v", err)
+				} else if deleted > 0 {
+					log.Printf("Sesiones expiradas eliminadas: %d", deleted)
+				}
+			}
+		}
+	}()
 
 	// 3. Conectar las Rutas (Inyectamos la DB aquí)
 	// Esta función para usar paths y handlers
@@ -86,6 +108,8 @@ func main() {
 
 	// 6. APAGADO ELEGANTE (Graceful Shutdown)
 	log.Println("\n⚠️  Cerrando servidor de forma segura...")
+
+	stopSessionCleanup()
 
 	// Cerramos la conexión a la base de datos
 	store.CloseDB()

@@ -4,16 +4,28 @@
         (search)="onSearch($event)">
     </app-ui-search-bar>
     @if (users().length > 0) {
-        <app-create-button label="Crear Usuario" (clicked)="openCreateUserModal()"></app-create-button>
+        @if (canCreateUsers()) {
+          <app-create-button label="Crear Usuario" (clicked)="openCreateUserModal()"></app-create-button>
+        }
     }
 </div>
+@if (successMessage()) {
+  <p class="success-message success-message--compact" role="status" aria-live="polite">{{ successMessage() }}</p>
+}
 @if (users().length > 0) {
-  <app-list-users [usersList]="users()"></app-list-users>
+  <app-list-users
+    [usersList]="users()"
+    [canEdit]="canEditUsers()"
+    [canDelete]="canDeleteUsers()"
+    (editUser)="onEdit($event)"
+    (deleteUser)="onDelete($event)">
+  </app-list-users>
 } @else {
   <app-empty-state
     imagenUrl="/images/Add%20User.svg"
     titulo="No hay usuarios registrados"
     subtitulo="Crea el primer usuario para que pueda acceder al sistema."
+    [showButton]="canCreateUsers()"
     textoBoton="Crear Usuario"
     (buttonClick)="openCreateUserModal()">
   </app-empty-state>

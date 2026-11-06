@@ -10,17 +10,37 @@
 
 ### Auth Routes
 **Group**: No prefix  
-**Middleware**: `IsAuthenticated` only on `/logout`  
+**Middleware**: `/logout` and `/refresh` use the refresh-token cookie
 **Handler**: `internal/http/handlers/auth/authHandler.go`
 
 | Method | Endpoint | Auth |
 |--------|----------|------|
 | POST | `/login` | No |
 | POST | `/register` | No |
-| POST | `/logout` | Yes |
-| POST | `/refresh` | No |
+| POST | `/logout` | Refresh cookie |
+| POST | `/refresh` | Refresh cookie |
 | POST | `/forgot-password` | No |
 | POST | `/recovery-password` | No |
+
+`/login` and `/register` return `access_token` in the JSON body. The API sets a
+7-day opaque refresh token only in an `HttpOnly`, `Secure`, `SameSite=Strict`
+cookie. Protected routes require `Authorization: Bearer <access_token>`.
+`/refresh` validates that cookie against the hashed token in `sessions` and
+returns a new 15-minute access token in JSON. `/logout` revokes the associated
+session and clears the refresh cookie. Login/register and refresh responses also
+include the user's flat `roles`, `permissions`, and `is_admin` values for
+conditional UI rendering. For example, a file edit route can enforce
+`middlewares.RequirePermission(db, "archivos", "editar")`; an admin-only route
+can enforce `middlewares.RequireAdmin(db)`. Both must follow
+`middlewares.IsAuthenticated`.
+
+`GET /roles` includes each role's `id`, `name`, and `description`.
+`POST /users` accepts `username`, `email`, `password`, and `role_id`; its `201`
+response includes the assigned role in `roles` with `id`, `name`, and
+`description`, which the user-creation confirmation displays. `GET /users/:id`
+also returns assigned roles with descriptions. `PUT /users/edit/:id` accepts an
+optional `role_id` and returns the updated user's roles; changing a role also
+requires the `roles.gestionar` permission.
 
 ---
 
@@ -76,7 +96,7 @@
 
 ### User Routes
 **Group Prefix**: `/users`  
-**Middleware**: `IsAuthenticated` (all)  
+**Middleware**: `IsAuthenticated` (all); creating and deleting users also require an administrator  
 **Handler**: `internal/http/handlers/users/user.go`
 
 | Method | Endpoint | Auth |
@@ -84,6 +104,7 @@
 | GET | `/users` | Yes |
 | GET | `/users/search` | Yes |
 | GET | `/users/:id` | Yes |
+| POST | `/users` | Admin |
 | PUT | `/users/edit/:id` | Yes |
 | DELETE | `/users/:id` | Yes |
 
@@ -101,13 +122,51 @@
 
 ---
 
-## Total: 31 live endpoints
+### Role Routes
+**Group Prefix**: `/roles` and `/permissions`  
+**Middleware**: `IsAuthenticated` (all); every route also requires administrator or the `roles.gestionar` permission, except `/permissions/me`  
+**Handler**: `internal/http/handlers/roles/role.go`
+
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/permissions` | Yes |
+| GET | `/permissions/me` | Yes |
+| GET | `/roles` | Yes |
+| POST | `/roles/new` | Yes |
+| PUT | `/roles/edit/:id` | Yes |
+| DELETE | `/roles/:id` | Yes |
+
+> The `Administrador` role cannot be deleted.
+
+---
+
+### Group Routes
+**Group Prefix**: `/groups`  
+**Middleware**: `IsAuthenticated` (all); every route also requires administrator or the `roles.gestionar` permission  
+**Handler**: `internal/http/handlers/groups/group.go`
+
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/groups` | Yes |
+| POST | `/groups/new` | Yes |
+| PUT | `/groups/edit/:id` | Yes |
+| DELETE | `/groups/:id` | Yes |
+| GET | `/groups/:id/users` | Yes |
+| POST | `/groups/:id/users` | Yes |
+| DELETE | `/groups/:id/users/:userId` | Yes |
+| GET | `/groups/:id/files` | Yes |
+| DELETE | `/groups/:id/files/:fileId` | Yes |
+
+---
+
+## Total: 46 live endpoints
 
 ---
 
 ## Frontend API Routes (`apiUrls.ts`)
 
-All endpoints use `withCredentials: true` and are defined in `src/app/core/routes/apiUrls.ts`:
+Requests use credentials for the refresh cookie and the auth interceptor adds the
+access-token bearer header. Routes are defined in `src/app/core/routes/apiUrls.ts`:
 
 ### Auth
 | Key | Method | Path |
@@ -158,6 +217,29 @@ All endpoints use `withCredentials: true` and are defined in `src/app/core/route
 | `projects.search` | GET | `{BASE_URL}/project/search` |
 | `projects.create` | POST | `{BASE_URL}/project/new` |
 | `projects.update` | PUT | `{BASE_URL}/project/edit/{id}` |
+
+### Roles and Permissions
+| Key | Method | Path |
+|-----|--------|------|
+| `roles.getAll` | GET | `{BASE_URL}/roles` |
+| `roles.create` | POST | `{BASE_URL}/roles/new` |
+| `roles.update` | PUT | `{BASE_URL}/roles/edit/{id}` |
+| `roles.delete` | DELETE | `{BASE_URL}/roles/{id}` |
+| `permissions.getAll` | GET | `{BASE_URL}/permissions` |
+| `permissions.me` | GET | `{BASE_URL}/permissions/me` |
+
+### Groups
+| Key | Method | Path |
+|-----|--------|------|
+| `groups.getAll` | GET | `{BASE_URL}/groups` |
+| `groups.create` | POST | `{BASE_URL}/groups/new` |
+| `groups.update` | PUT | `{BASE_URL}/groups/edit/{id}` |
+| `groups.delete` | DELETE | `{BASE_URL}/groups/{id}` |
+| `groups.getUsers` | GET | `{BASE_URL}/groups/{id}/users` |
+| `groups.addUser` | POST | `{BASE_URL}/groups/{id}/users` |
+| `groups.removeUser` | DELETE | `{BASE_URL}/groups/{id}/users/{userId}` |
+| `groups.getFiles` | GET | `{BASE_URL}/groups/{id}/files` |
+| `groups.revokeFile` | DELETE | `{BASE_URL}/groups/{id}/files/{fileId}` |
 
 ---
 

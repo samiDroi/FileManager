@@ -18,6 +18,10 @@
         (click)="handleNavigation()" [attr.title]="collapsed() ? 'Todos los Clientes' : null">
         <i class="fa fa-briefcase"></i> <span class="label">Todos los Clientes</span>
       </a>
+      <a [routerLink]="[routes.groups]" routerLinkActive="active" class="nav-item"
+        (click)="handleNavigation()" [attr.title]="collapsed() ? 'Mis Grupos' : null">
+        <i class="fa fa-object-group"></i> <span class="label">Mis Grupos</span>
+      </a>
     </nav>
   </div>
 
@@ -27,10 +31,14 @@
     
     <div class="clients-header">
       <span class="section-label">Mis Clientes</span>
-      <app-create-button 
-        [label]="'+ Nuevo Cliente'" 
-        (clicked)="emitCreateClient()">  
-      </app-create-button>
+      @if (projectsLoaded() && hasProjects() && canCreateClients()) {
+        <app-create-button
+          [label]="'+ Nuevo Cliente'"
+          (clicked)="emitCreateClient()">
+        </app-create-button>
+      } @else if (projectsLoaded()) {
+        <span class="dependency-notice">Debes crear un proyecto primero</span>
+      }
     </div>
 
     <div class="search-container">

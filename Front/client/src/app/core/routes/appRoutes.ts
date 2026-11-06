@@ -13,14 +13,17 @@ export const AppRoutes = {
         users: 'users',
         files: 'files',
         clients: 'clients',
-        projects: 'projects'
+        projects: 'projects',
+        groups: 'groups'
     },
     admin:{
       dashboard: 'admin-dashboard',
       users: 'admin-users',
       files: 'admin-files',
       clients: 'admin-clients',
-      projects: 'admin-projects'
+      projects: 'admin-projects',
+      groups: 'admin-groups',
+      roles: 'admin-roles'
     }
 }
 

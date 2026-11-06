@@ -7,6 +7,7 @@ import (
 	"server/internal/utils"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -78,6 +79,104 @@ func (r *UserRepository) CreateUsers(user *models.User, ctx context.Context) (*m
 	return user, nil
 }
 
+func (r *UserRepository) CreateUserWithRole(ctx context.Context, username, email, password string, roleID, createdBy int) (*dtos.CreatedUserResponse, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var role dtos.AssignedRoleResponse
+	if err := tx.QueryRow(ctx,
+		`SELECT id, name, COALESCE(description, '')
+		 FROM roles
+		 WHERE id = $1
+		 FOR SHARE`,
+		roleID,
+	).Scan(&role.ID, &role.Name, &role.Description); err != nil {
+		return nil, err
+	}
+
+	var userID int
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO "user" (username, email, password, created_by, updated_by)
+		 VALUES ($1, $2, $3, $4, $4)
+		 RETURNING id`,
+		username, email, password, createdBy,
+	).Scan(&userID); err != nil {
+		return nil, err
+	}
+
+	var creatorUsername string
+	if err := tx.QueryRow(ctx, `SELECT username FROM "user" WHERE id = $1`, createdBy).Scan(&creatorUsername); err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO users_roles (user_id, role_id, created_by, updated_by)
+		 VALUES ($1, $2, $3, $3)`,
+		userID, role.ID, createdBy,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &dtos.CreatedUserResponse{
+		ID:            userID,
+		Username:      username,
+		Email:         email,
+		CreatedBy:     creatorUsername,
+		UpdatedBy:     creatorUsername,
+		UploadedFiles: 0,
+		Roles:         []dtos.AssignedRoleResponse{role},
+	}, nil
+}
+
+// AssignAdminRoleIfMissing bootstraps the system by making the oldest user an
+// administrator when no administrator has been assigned yet. On a fresh
+// database this is the first registered user.
+func (r *UserRepository) AssignAdminRoleIfMissing(ctx context.Context) error {
+	var roleID int
+	err := r.db.QueryRow(ctx,
+		`SELECT id FROM roles
+		 WHERE LOWER(TRIM(name)) IN ('administrador', 'admin')
+		 ORDER BY id
+		 LIMIT 1`,
+	).Scan(&roleID)
+	if err != nil {
+		return nil
+	}
+
+	var adminAssignments int
+	if err := r.db.QueryRow(ctx,
+		`SELECT COUNT(*) FROM users_roles WHERE role_id = $1`,
+		roleID,
+	).Scan(&adminAssignments); err != nil {
+		return err
+	}
+	if adminAssignments > 0 {
+		return nil
+	}
+
+	var oldestUserID int
+	if err := r.db.QueryRow(ctx,
+		`SELECT id FROM "user" WHERE is_deleted = 0 ORDER BY id LIMIT 1`,
+	).Scan(&oldestUserID); err != nil {
+		return nil
+	}
+
+	_, err = r.db.Exec(ctx,
+		`INSERT INTO users_roles (user_id, role_id, created_by, updated_by)
+		 VALUES ($1, $2, $1, $1)
+		 ON CONFLICT (user_id, role_id) DO NOTHING`,
+		oldestUserID, roleID,
+	)
+	return err
+}
+
 func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*dtos.UserResponse, error) {
 	q := `SELECT u.id, u.username, u.email, u.password, u.created_at, u.updated_at,
 		COALESCE((SELECT COUNT(*) FROM files f WHERE f.created_by = u.id), 0) as uploaded_files
@@ -90,7 +189,37 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id int) (*dtos.UserRes
 		return nil, err
 	}
 	resp := toUserResponse(&u, uploadedFiles)
+	roles, err := r.getUserRoles(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	resp.Roles = roles
 	return &resp, nil
+}
+
+func (r *UserRepository) getUserRoles(ctx context.Context, userID int) ([]dtos.AssignedRoleResponse, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT r.id, r.name, COALESCE(r.description, '')
+		 FROM users_roles ur
+		 JOIN roles r ON r.id = ur.role_id
+		 WHERE ur.user_id = $1
+		 ORDER BY r.name`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	roles := make([]dtos.AssignedRoleResponse, 0)
+	for rows.Next() {
+		var role dtos.AssignedRoleResponse
+		if err := rows.Scan(&role.ID, &role.Name, &role.Description); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	return roles, rows.Err()
 }
 
 func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
@@ -115,10 +244,46 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	return &u, nil
 }
 
-func (r *UserRepository) UpdateUser(ctx context.Context, req *dtos.UpdateUserRequest, id int) (*dtos.UserResponse, error) {
-	q := `UPDATE "user" SET username = $1, email = $2, updated_at = $3 WHERE id = $4`
-	_, err := r.db.Exec(ctx, q, req.Username, req.Email, time.Now(), id)
+func (r *UserRepository) UpdateUser(ctx context.Context, req *dtos.UpdateUserRequest, id, updatedBy int) (*dtos.UserResponse, error) {
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	result, err := tx.Exec(ctx,
+		`UPDATE "user" SET username = $1, email = $2, updated_at = $3, updated_by = $4 WHERE id = $5`,
+		req.Username, req.Email, time.Now(), updatedBy, id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if result.RowsAffected() == 0 {
+		return nil, pgx.ErrNoRows
+	}
+
+	if req.RoleID != nil {
+		var role dtos.AssignedRoleResponse
+		if err := tx.QueryRow(ctx,
+			`SELECT id, name, COALESCE(description, '')
+			 FROM roles WHERE id = $1 FOR SHARE`,
+			*req.RoleID,
+		).Scan(&role.ID, &role.Name, &role.Description); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM users_roles WHERE user_id = $1`, id); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO users_roles (user_id, role_id, created_by, updated_by)
+			 VALUES ($1, $2, $3, $3)`,
+			id, role.ID, updatedBy,
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 	return r.GetUserByID(ctx, id)

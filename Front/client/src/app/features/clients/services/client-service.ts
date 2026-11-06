@@ -134,6 +134,44 @@ export class ClientService {
       }
     });
   }
+  async deleteClient(client: ClientData): Promise<void> {
+    const result = await Swal.fire({
+      title: '¿Eliminar cliente?',
+      text: `Se eliminará el cliente "${client.name}".`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    this.http.delete<void>(ApiRoutes.clients.delete(client.id)).subscribe({
+      next: () => {
+        this.state.update(current => {
+          const clients = new Map(current.clients);
+          clients.delete(client.id);
+          return { ...current, clients };
+        });
+        Swal.fire({
+          icon: 'success',
+          title: 'Cliente eliminado',
+          text: 'El cliente se ha eliminado correctamente',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: error => {
+        console.error('Error al eliminar el cliente:', error);
+        Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
+      },
+    });
+  }
+
   getClientsWithProjects(){
     this.http.get<ClientsWithProjects[]>(ApiRoutes.clients.withProjects, {withCredentials:true}).subscribe({
       next: (data) => {

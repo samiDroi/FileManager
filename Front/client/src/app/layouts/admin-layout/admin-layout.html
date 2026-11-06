@@ -16,9 +16,19 @@
       <a [routerLink]="[routes.clients]" routerLinkActive="active" class="nav-item">
         <i class="fa fa-briefcase" aria-hidden="true"></i><span>Clientes</span>
       </a>
-      <a [routerLink]="[routes.users]" routerLinkActive="active" class="nav-item">
-        <i class="fa fa-users" aria-hidden="true"></i><span>Usuarios</span>
-      </a>
+      @if (canReadUsers()) {
+        <a [routerLink]="[routes.users]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-users" aria-hidden="true"></i><span>Usuarios</span>
+        </a>
+      }
+      @if (canManageRbac()) {
+        <a [routerLink]="[routes.groups]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-object-group" aria-hidden="true"></i><span>Grupos</span>
+        </a>
+        <a [routerLink]="[routes.roles]" routerLinkActive="active" class="nav-item">
+          <i class="fa fa-shield" aria-hidden="true"></i><span>Roles</span>
+        </a>
+      }
     </nav>
 
     @let user = currentUser();

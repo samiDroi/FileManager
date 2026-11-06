@@ -12,6 +12,7 @@ describe('ListFilesModal', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ListFilesModal);
+    fixture.componentRef.setInput('files', []);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

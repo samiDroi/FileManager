@@ -5,7 +5,9 @@ import (
 	"server/internal/http/handlers/auth"
 	"server/internal/http/handlers/clients"
 	"server/internal/http/handlers/files"
+	"server/internal/http/handlers/groups"
 	"server/internal/http/handlers/projects"
+	"server/internal/http/handlers/roles"
 	"server/internal/http/handlers/summary"
 	"server/internal/http/handlers/users"
 
@@ -21,6 +23,8 @@ func SetupRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	projects.RegisterRoutes(e, db)
 	files.RegisterRoutes(e, db)
 	users.RegisterRoutes(e, db)
+	roles.RegisterRoutes(e, db)
+	groups.RegisterRoutes(e, db)
 	handlers.RegisterRoutes(e, db)
 	summary.RegisterRoutes(e, db)
 }

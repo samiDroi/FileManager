@@ -1,0 +1,139 @@
+<div class="access-dialog">
+  <header class="dialog-header">
+    <div>
+      <p class="eyebrow">{{ data.afterUpload ? 'Archivo subido' : 'Control de acceso' }}</p>
+      <h2>{{ data.file.tittle }}</h2>
+      @if (data.afterUpload) {
+        <p class="helper-text">
+          Elige quién puede acceder a este archivo. Si cierras sin otorgar accesos, solo tú podrás verlo.
+        </p>
+      }
+    </div>
+    <button type="button" class="close-button" (click)="close()" aria-label="Cerrar">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  @if (loading()) {
+    <p class="state-message">Cargando accesos...</p>
+  } @else {
+    <div class="access-tabs" role="tablist" aria-label="Tipo de acceso">
+      <button
+        type="button"
+        role="tab"
+        class="tab-button"
+        [class.active]="activeTab() === 'users'"
+        [attr.aria-selected]="activeTab() === 'users'"
+        (click)="activeTab.set('users')">
+        <i class="fa fa-users" aria-hidden="true"></i>
+        Usuarios
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab-button"
+        [class.active]="activeTab() === 'groups'"
+        [attr.aria-selected]="activeTab() === 'groups'"
+        (click)="activeTab.set('groups')">
+        <i class="fa fa-object-group" aria-hidden="true"></i>
+        Grupos
+      </button>
+    </div>
+
+    @if (activeTab() === 'users') {
+      <section class="access-section" role="tabpanel">
+        <h3>Usuarios con acceso</h3>
+
+        <div class="grant-row">
+          <select
+            class="form-select"
+            [ngModel]="selectedUserId()"
+            (ngModelChange)="selectedUserId.set($event)">
+            <option [ngValue]="null">Selecciona un usuario</option>
+            @for (user of availableUsers(); track user.id) {
+              <option [ngValue]="user.id">{{ user.username }} — {{ user.email }}</option>
+            }
+          </select>
+
+          <select
+            class="form-select access-select"
+            [ngModel]="selectedUserAccess()"
+            (ngModelChange)="selectedUserAccess.set($event)">
+            @for (type of accessTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+
+          <button type="button" class="btn-grant" [disabled]="selectedUserId() === null" (click)="onGrantUser()">
+            Otorgar
+          </button>
+        </div>
+
+        @if (access().users.length === 0) {
+          <p class="state-message">Sin accesos directos a usuarios.</p>
+        } @else {
+          <ul class="access-list">
+            @for (entry of access().users; track entry.user_id) {
+              <li>
+                <span class="access-name">{{ entry.username }}</span>
+                <span class="access-badge">{{ entry.access_type }}</span>
+                <button type="button" class="remove-button" title="Revocar acceso" (click)="onRevokeUser(entry)">
+                  <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    } @else {
+      <section class="access-section" role="tabpanel">
+        <h3>Grupos con acceso</h3>
+
+        <div class="grant-row">
+          <select
+            class="form-select"
+            [ngModel]="selectedGroupId()"
+            (ngModelChange)="selectedGroupId.set($event)">
+            <option [ngValue]="null">Selecciona un grupo</option>
+            @for (group of availableGroups(); track group.id) {
+              <option [ngValue]="group.id">{{ group.name }}</option>
+            }
+          </select>
+
+          <select
+            class="form-select access-select"
+            [ngModel]="selectedGroupAccess()"
+            (ngModelChange)="selectedGroupAccess.set($event)">
+            @for (type of accessTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+
+          <button type="button" class="btn-grant" [disabled]="selectedGroupId() === null" (click)="onGrantGroup()">
+            Otorgar
+          </button>
+        </div>
+
+        @if (access().groups.length === 0) {
+          <p class="state-message">Sin accesos a grupos.</p>
+        } @else {
+          <ul class="access-list">
+            @for (entry of access().groups; track entry.group_id) {
+              <li>
+                <span class="access-name">{{ entry.group_name }}</span>
+                <span class="access-badge">{{ entry.access_type }}</span>
+                <button type="button" class="remove-button" title="Revocar acceso" (click)="onRevokeGroup(entry)">
+                  <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+
+  <footer class="dialog-footer">
+    <button type="button" class="btn-done" (click)="close()">Listo</button>
+  </footer>
+</div>

@@ -1,5 +1,5 @@
 
-@if(clientsList().length > 0) {
+@if(clientsList().length > 0 && canCreateClients()) {
   <app-create-button
     [label]="'+ Nuevo Cliente'"
     (clicked)="openCreateClientModal()">
@@ -19,15 +19,20 @@
     imagenUrl="/images/Search.svg"
     titulo="No tienes clientes registrados"
     subtitulo="Añade un cliente para empezar a trabajar."
-    textoBoton="Nuevo Cliente"
+    [textoBoton]="canCreateClients() ? 'Nuevo Cliente' : ''"
+    [showButton]="canCreateClients()"
     (buttonClick)="openCreateClientModal()">
   </app-empty-state>
 } @else {
   <app-list-clients
     [clients]="clientsList()"
     [isLoading]="loading()"
+    [canCreateProject]="canCreateProjects()"
+    [canEdit]="canEditClients()"
+    [canDelete]="canDeleteClients()"
     (createClient)="openCreateClientModal()"
     (editClient)="openEditClientModal($event)"
+    (deleteClient)="onDeleteClient($event)"
     (createproject)="openCreateProjectModal($event)">
   </app-list-clients>
 }

@@ -16,11 +16,13 @@ import { DownloadButton } from '../../../../../shared/components/buttons/downloa
 export class ListFilesModal {
   files = input.required<FileData[]>()
   isLoading = input<boolean>(false)
+  canManageAccess = input<boolean>(false)
 
   @Output() downloadFile = new EventEmitter<FileData>()
   @Output() deleteFile = new EventEmitter<FileData>()
   @Output() editFile = new EventEmitter<FileData>()
   @Output() viewFile = new EventEmitter<FileData>()
+  @Output() manageAccess = new EventEmitter<FileData>()
 
   onDownloadFile(file: FileData): void {
     this.downloadFile.emit(file);
@@ -33,5 +35,9 @@ export class ListFilesModal {
   }
   onViewFile(file: FileData): void {
     this.viewFile.emit(file);
+  }
+
+  onManageAccess(file: FileData): void {
+    this.manageAccess.emit(file);
   }
 }

@@ -29,14 +29,15 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 
 	e.GET("/client", h.GetAll, middlewares.IsAuthenticated)
 	e.GET("/client/search", h.Search, middlewares.IsAuthenticated)
-	e.POST("/client/new", h.Create, middlewares.IsAuthenticated)
-	e.PUT("/client/edit/:id", h.Edit, middlewares.IsAuthenticated)
-	e.DELETE("/client/:id", h.Delete, middlewares.IsAuthenticated)
+	e.POST("/client/new", h.Create, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "clientes", "crear"))
+	e.PUT("/client/edit/:id", h.Edit, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "clientes", "editar"))
+	e.DELETE("/client/:id", h.Delete, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "clientes", "eliminar"))
 	e.GET("/client/with-projects", h.GetClientsWithProjects, middlewares.IsAuthenticated)
 }
 
 func (h *ClientHandler) GetAll(c echo.Context) error {
-	clients, err := h.service.GetAllClients(c.Request().Context())
+	userSess := middlewares.GetRequestUserSession(c)
+	clients, err := h.service.GetAllClients(c.Request().Context(), userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -45,7 +46,8 @@ func (h *ClientHandler) GetAll(c echo.Context) error {
 
 func (h *ClientHandler) Search(c echo.Context) error {
 	param := c.QueryParam("q")
-	clients, err := h.service.SearchClient(c.Request().Context(), param)
+	userSess := middlewares.GetRequestUserSession(c)
+	clients, err := h.service.SearchClient(c.Request().Context(), param, userSess.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Fallo en BD"})
 	}
@@ -122,7 +124,8 @@ func (h *ClientHandler) Delete(c echo.Context) error {
 }
 
 func (h *ClientHandler) GetClientsWithProjects(c echo.Context) error {
-	clients, err := h.service.GetClientsWithProjects(c.Request().Context())
+	userSess := middlewares.GetRequestUserSession(c)
+	clients, err := h.service.GetClientsWithProjects(c.Request().Context(), userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}

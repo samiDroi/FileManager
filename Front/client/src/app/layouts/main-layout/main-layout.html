@@ -5,7 +5,9 @@
     [collapsed]="sidebarCollapsed()"
     (requestExpand)="expandSidebar()"
     (onCreateClient)="openCreateClientModal()"
-    [clientsList]="clients()">
+    [clientsList]="clients()"
+    [hasProjects]="hasProjects()"
+    [projectsLoaded]="projectsLoaded()">
   </app-sidebar>
 
   <main class="layout-main">

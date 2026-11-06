@@ -1,5 +1,5 @@
 
-@if(projectsList().length > 0 && !loading()) {
+@if(projectsList().length > 0 && !loading() && canCreateProjects()) {
   <app-create-button
     [label]="'+ Nuevo Proyecto'"
     (clicked)="openCreateProjectModal()">
@@ -13,19 +13,23 @@
   </app-ui-search-bar>
 </div>
 
-@if (projectsList().length === 0 && !loading()) {
+@if (projectsList().length === 0 && !loading() && !clientsLoading()) {
   <app-empty-state
     imagenUrl="/images/Folder.svg"
-    titulo="Aún no hay proyectos"
-    subtitulo="Crea tu primer proyecto para organizarte."
-    textoBoton="Nuevo Proyecto"
-    (buttonClick)="openCreateProjectModal()">
+    [titulo]="hasClients() ? 'Aún no hay proyectos' : 'Aún no hay clientes'"
+    [subtitulo]="hasClients() ? 'Crea tu primer proyecto para organizarte.' : 'Registra un cliente antes de crear proyectos.'"
+    [textoBoton]="hasClients() ? 'Nuevo Proyecto' : 'Ir a clientes'"
+    [showButton]="canCreateProjects() || !hasClients()"
+    (buttonClick)="onEmptyStateClick()">
   </app-empty-state>
 } @else {
   <app-list-projects
     [projectsList]="projectsList()"
     [isLoading]="loading()"
+    [canEdit]="canEditProjects()"
+    [canDelete]="canDeleteProjects()"
     (editProject)="openEditProjectModal($event)"
+    (deleteProject)="onDeleteProject($event)"
     (goToFiles)="openFilesModal($event)">
   </app-list-projects>
 }

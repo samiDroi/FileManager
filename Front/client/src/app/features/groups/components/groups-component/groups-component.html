@@ -1,0 +1,81 @@
+<section class="groups-panel">
+  <header class="panel-header">
+    <div>
+      <p class="eyebrow"><i class="fa fa-object-group" aria-hidden="true"></i> Administración</p>
+      <h2>Gestión de grupos</h2>
+      <p class="subtitle">
+        Agrupa usuarios para compartir archivos y revisar sus accesos desde un solo lugar.
+      </p>
+    </div>
+    @if (groups().length > 0 && canManageGroups()) {
+      <app-create-button label="Nuevo grupo" (clicked)="openCreateGroup()"></app-create-button>
+    }
+  </header>
+
+  @if (groups().length === 0 && !loading()) {
+    <app-empty-state
+      imagenUrl="/images/groups-empty.svg"
+      titulo="Aún no hay grupos"
+      subtitulo="Crea tu primer grupo para organizar equipos y compartir archivos."
+      [textoBoton]="canManageGroups() ? 'Crear grupo' : ''"
+      [showButton]="canManageGroups()"
+      (buttonClick)="openCreateGroup()">
+    </app-empty-state>
+  } @else {
+    <div class="group-grid">
+      @for (group of groups(); track group.id) {
+        <article
+          class="group-card"
+          role="button"
+          tabindex="0"
+          (click)="openGroupDetail(group)"
+          (keydown.enter)="openGroupDetail(group)"
+          (keydown.space)="openGroupDetail(group)">
+          <div class="card-accent"></div>
+
+          <div class="card-top">
+            <span class="group-icon"><i class="fa fa-users" aria-hidden="true"></i></span>
+            <div class="card-actions">
+              @if (group.can_manage) {
+                <button
+                  type="button"
+                  class="icon-button"
+                  title="Editar grupo"
+                  aria-label="Editar grupo"
+                  (click)="openEditGroup(group); $event.stopPropagation()">
+                  <i class="fa fa-pencil" aria-hidden="true"></i>
+                </button>
+              }
+              @if (canManageGroups()) {
+                <button
+                  type="button"
+                  class="icon-button danger"
+                  title="Eliminar grupo"
+                  aria-label="Eliminar grupo"
+                  (click)="deleteGroup(group, $event)">
+                  <i class="fa fa-trash" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="card-body">
+            <h3>{{ group.name }}</h3>
+            <p>{{ group.description || 'Sin descripción' }}</p>
+          </div>
+
+          <footer class="card-footer">
+            <span class="metric">
+              <i class="fa fa-files-o" aria-hidden="true"></i>
+              {{ group.file_count }} {{ group.file_count === 1 ? 'archivo' : 'archivos' }}
+            </span>
+            <span class="metric">
+              <i class="fa fa-user-o" aria-hidden="true"></i>
+              {{ group.user_count }} {{ group.user_count === 1 ? 'miembro' : 'miembros' }}
+            </span>
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</section>

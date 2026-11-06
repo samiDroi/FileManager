@@ -1,6 +1,10 @@
 package api
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"server/internal/config"
@@ -18,43 +22,51 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateTokens genera AMBOS tokens: Access (15m) y Refresh (7d)
-func GenerateTokens(userID int, username string) (string, string, error) {
+const RefreshTokenCookieName = "refresh_token"
+
+const AccessTokenLifetime = 15 * time.Minute
+const RefreshTokenLifetime = 7 * 24 * time.Hour
+const RefreshTokenGracePeriod = 30 * time.Second
+
+func GenerateAccessToken(userID int, username string) (string, error) {
 	if config.Config.SecretKey == "" {
-		return "", "", fmt.Errorf("SECRET_KEY no está configurada")
+		return "", fmt.Errorf("SECRET_KEY no está configurada")
 	}
 
 	secretKey := []byte(config.Config.SecretKey)
-
-	// 1. ACCESS TOKEN: 15 min token
+	now := time.Now()
 	accessClaims := &Claims{
 		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(AccessTokenLifetime)),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
-	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(secretKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	// 2. REFRESH TOKEN: long duration (7 days)
-	refreshClaims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(secretKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(secretKey)
 }
+
+func GenerateRefreshToken() (string, error) {
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return "", fmt.Errorf("generar refresh token: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(secret), nil
+}
+
+func HashRefreshToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
+}
+
+func GenerateSessionFamilyID() (string, error) {
+	familyID := make([]byte, 16)
+	if _, err := rand.Read(familyID); err != nil {
+		return "", fmt.Errorf("generar family id: %w", err)
+	}
+	return hex.EncodeToString(familyID), nil
+}
+
 func GenerateResetPasswordToken(userID int, currentPasswordHash string) (string, error) {
 	if config.Config.SecretKey == "" {
 		return "", fmt.Errorf("SECRET_KEY no está configurada")
@@ -72,45 +84,32 @@ func GenerateResetPasswordToken(userID int, currentPasswordHash string) (string,
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretKey)
 }
 
-func SetTokenCookies(c echo.Context, accessToken, refreshToken string) {
-	// Cookie Access Token
+func SetRefreshTokenCookie(c echo.Context, refreshToken string) {
 	c.SetCookie(&http.Cookie{
-		Name:     "session_token",
-		Value:    accessToken,
-		Expires:  time.Now().Add(15 * time.Minute),
-		HttpOnly: true,
-		Secure:   config.Config.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		Path:     "/",
-	})
-
-	// Cookie Refresh Token
-	c.SetCookie(&http.Cookie{
-		Name:     "refresh_token",
+		Name:     RefreshTokenCookieName,
 		Value:    refreshToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		Expires:  time.Now().Add(RefreshTokenLifetime),
 		HttpOnly: true,
-		Secure:   config.Config.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
 }
 
-func GetTokenCookie(c echo.Context) (string, error) {
-	cookie, err := c.Cookie("session_token")
-	if err != nil {
-		return "", echo.NewHTTPError(http.StatusUnauthorized, "not session token found")
-	}
-	return cookie.Value, nil
+func ClearLegacyAccessTokenCookie(c echo.Context) {
+	clearCookie(c, "session_token")
 }
 
 // validate the token and return claims if the token is valid
 func ValidateToken(tokenString string) (*Claims, error) {
+	if config.Config.SecretKey == "" {
+		return nil, fmt.Errorf("SECRET_KEY no está configurada")
+	}
+
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		//verify signature
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("método de firma inesperado: %v", token.Header["alg"])
 		}
 		return []byte(config.Config.SecretKey), nil
@@ -123,19 +122,21 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// ClearCookies limpia ambas cookies
+// ClearCookies removes the refresh cookie and any legacy access-token cookie.
 func ClearCookies(c echo.Context) {
-	names := []string{"session_token", "refresh_token"}
-	for _, name := range names {
-		cookie := &http.Cookie{
-			Name:     name,
-			Value:    "",
-			Expires:  time.Now().Add(-1 * time.Hour),
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   config.Config.CookieSecure,
-			SameSite: http.SameSiteStrictMode,
-		}
-		c.SetCookie(cookie)
-	}
+	ClearLegacyAccessTokenCookie(c)
+	clearCookie(c, RefreshTokenCookieName)
+}
+
+func clearCookie(c echo.Context, name string) {
+	c.SetCookie(&http.Cookie{
+		Name:     name,
+		Value:    "",
+		Expires:  time.Unix(1, 0),
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
 }

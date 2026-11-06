@@ -1,0 +1,39 @@
+<div class="custom-modal-container">
+  <div class="modal-header">
+    <div>
+      <h2>{{ isEdit ? 'Editar grupo' : 'Nuevo grupo' }}</h2>
+      <p>Organiza usuarios y comparte archivos con un mismo equipo.</p>
+    </div>
+    <button type="button" class="close-icon" (click)="onCancel()" aria-label="Cerrar">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <form [formGroup]="groupForm" class="modal-body" (ngSubmit)="onSubmit()">
+    <app-form-input
+      label="Nombre del grupo"
+      placeholder="Ej. Diseño gráfico"
+      [control]="groupForm.get('name')!">
+    </app-form-input>
+
+    <div class="input-group">
+      <label for="group-description">Descripción</label>
+      <textarea
+        id="group-description"
+        rows="3"
+        placeholder="Describe el propósito del grupo"
+        formControlName="description">
+      </textarea>
+    </div>
+  </form>
+
+  <div class="modal-footer">
+    <app-cancel-button [label]="'Cancelar'" (clicked)="onCancel()"></app-cancel-button>
+    <app-confirm-button
+      [text]="isEdit ? 'Actualizar' : 'Crear grupo'"
+      type="button"
+      [isDisabled]="groupForm.invalid"
+      (clicked)="onSubmit()">
+    </app-confirm-button>
+  </div>
+</div>

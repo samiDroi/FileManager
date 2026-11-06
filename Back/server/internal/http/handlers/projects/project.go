@@ -30,12 +30,14 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewProjectHandler(svc)
 	e.GET("/project", h.GetAll, middlewares.IsAuthenticated)
 	e.GET("/project/search", h.Search, middlewares.IsAuthenticated)
-	e.POST("/project/new", h.Create, middlewares.IsAuthenticated)
-	e.PUT("/project/edit/:id", h.Update, middlewares.IsAuthenticated)
+	e.POST("/project/new", h.Create, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "proyectos", "crear"))
+	e.PUT("/project/edit/:id", h.Update, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "proyectos", "editar"))
+	e.DELETE("/project/:id", h.Delete, middlewares.IsAuthenticated, middlewares.RequirePermission(db, "proyectos", "eliminar"))
 }
 
 func (h *projectHandler) GetAll(c echo.Context) error {
-	projects, err := h.service.GetAllProjects(c.Request().Context())
+	userSess := middlewares.GetRequestUserSession(c)
+	projects, err := h.service.GetAllProjects(c.Request().Context(), userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -44,7 +46,8 @@ func (h *projectHandler) GetAll(c echo.Context) error {
 
 func (h *projectHandler) Search(c echo.Context) error {
 	param := c.QueryParam("q")
-	projects, err := h.service.SearchProjects(c.Request().Context(), param)
+	userSess := middlewares.GetRequestUserSession(c)
+	projects, err := h.service.SearchProjects(c.Request().Context(), param, userSess.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -69,6 +72,19 @@ func (h *projectHandler) Create(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, createdProject)
+}
+
+func (h *projectHandler) Delete(c echo.Context) error {
+	projectID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "ID de proyecto inválido")
+	}
+
+	if err := h.service.DeleteProject(c.Request().Context(), projectID); err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "Proyecto no encontrado")
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Proyecto eliminado correctamente"})
 }
 
 func (h *projectHandler) Update(c echo.Context) error {

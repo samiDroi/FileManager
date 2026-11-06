@@ -1,7 +1,7 @@
 import { Router, Routes } from '@angular/router';
 import { AppRoutes } from './core/routes/appRoutes';
 import { AdminLayout, AuthLayout, MainLayout } from './layouts';
-import { authGuard, guestGuard } from './core/guards';
+import { adminGuard, authGuard, guestGuard, rbacGuard } from './core/guards';
 import { AuthStateService } from './auth/auth-state.service';
 import { inject } from '@angular/core/primitives/di';
 
@@ -56,7 +56,7 @@ export const routes: Routes = [
        {
         path: '',
         component: AdminLayout,
-        canActivate: [authGuard],
+        canActivate: [authGuard, adminGuard],
         children: [
             {
                 path: AppRoutes.admin.dashboard,
@@ -77,6 +77,16 @@ export const routes: Routes = [
             {
                 path: AppRoutes.admin.projects,
                 loadComponent: () => import('./features/project/projects-component/projects-component').then(m => m.projectsComponent)
+            },
+            {
+                path: AppRoutes.admin.groups,
+                canActivate: [rbacGuard],
+                loadComponent: () => import('./features/groups/components/groups-component/groups-component').then(m => m.GroupsComponent)
+            },
+            {
+                path: AppRoutes.admin.roles,
+                canActivate: [rbacGuard],
+                loadComponent: () => import('./features/roles/components/roles-component/roles-component').then(m => m.RolesComponent)
             }
         ]
        },
@@ -107,7 +117,12 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/files/components/files-component/files-component').then(m => m.FilesComponent)
             },
             {
+                path: AppRoutes.features.groups,
+                loadComponent: () => import('./features/groups/components/groups-component/groups-component').then(m => m.GroupsComponent)
+            },
+            {
                 path: 'client/:id',
+                pathMatch: 'full',
                 loadComponent: () => import('./features/project/dynamic-list-component/dynamic-list-component').then(m => m.DynamicListComponent)
             }
         ]

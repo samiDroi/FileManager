@@ -66,10 +66,12 @@
               <option [value]="type.id">{{ type.name }}</option>
             }
           </select>
-          <app-create-button 
-            [label]="''" 
-            (clicked)="onCreateType()">  
-          </app-create-button>
+          @if (canCreateFileTypes()) {
+            <app-create-button 
+              [label]="''" 
+              (clicked)="onCreateType()">  
+            </app-create-button>
+          }
         </div>
       </div>
     </div>

@@ -15,7 +15,12 @@ import { WizardModalComponent } from './wizard-modal-component/wizard-modal-comp
 import { projectService } from '../../../project/services';
 import { TypeFiles } from '../../../typeFiles/services/type-files';
 import { FileTypeRequest } from '../../../../core/domain/dtos/fileType';
+import { ClientService } from '../../../clients/services';
+import { Router } from '@angular/router';
+import { AppRoutes } from '../../../../core/routes/appRoutes';
 import Swal from 'sweetalert2';
+import { PermissionService } from '../../../../core/services/permission-service';
+import { FileAccessDialog } from '../file-access-dialog/file-access-dialog';
 enum View {
   DRAG,
   FORM
@@ -31,8 +36,16 @@ export class FilesComponent implements OnInit {
   private filesService = inject(FileService);
   private projectService = inject(projectService);
   private fileTypeService = inject(TypeFiles);
+  private clientService = inject(ClientService);
+  private router = inject(Router);
+  private permissionService = inject(PermissionService);
   modalRef = inject(MatDialog);
+  protected readonly canCreateFiles = computed(() => this.permissionService.can('crear', 'archivos'));
+  protected readonly canManageAccess = computed(() => this.permissionService.can('otorgar', 'accesos'));
   isLoading = computed(() => this.filesService.state().loading);
+  protected clientsLoading = computed(() => this.clientService.state().loading);
+  protected hasClients = computed(() => this.clientService.state().clients.size > 0);
+  protected projectsLoading = computed(() => this.projectService.state().loading);
   allFiles = this.filesService.allFiles;
   actualView = signal<View>(View.DRAG);
   selectedFile = signal<File | null>(null);
@@ -45,6 +58,10 @@ export class FilesComponent implements OnInit {
     this.filesService.onSearch('');
     this.projectService.getAll();
     this.fileTypeService.getFileTypes();
+  }
+
+  onEmptyStateClick(): void {
+    this.router.navigate(['/', AppRoutes.features.dashboard, AppRoutes.features.projects]);
   }
 
   onCreateFile(): void {
@@ -109,6 +126,14 @@ export class FilesComponent implements OnInit {
       }
     });
   }
+  onManageAccess(file: FileData): void {
+    this.modalRef.open(FileAccessDialog, {
+      width: '640px',
+      maxWidth: '95vw',
+      data: { file },
+    });
+  }
+
   onSearch(query: string): void {
     this.filesService.onSearch(query);
   }

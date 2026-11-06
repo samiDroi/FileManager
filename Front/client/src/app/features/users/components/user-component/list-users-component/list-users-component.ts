@@ -13,6 +13,8 @@ import { DeleteButton } from '../../../../../shared/components/buttons/delete-bu
 })
 export class ListUsersComponent {
   usersList = input<UserData[]>([]);
+  canEdit = input<boolean>(false);
+  canDelete = input<boolean>(false);
   deleteUser = output<UserData>();
   editUser = output<UserData>();
   onEdit(user: UserData) {

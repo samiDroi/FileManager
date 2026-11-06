@@ -24,18 +24,29 @@
         <button class="menu-item" (click)="onViewFile(item); closeMenu()">
           <i class="fas fa-eye"></i> Vista previa
         </button>
-        <app-edit-button 
-          [label]="'Editar'" 
-          (clicked)="onEditFile(item); closeMenu()">  
-        </app-edit-button>
-        <app-download-button 
-          [label]="'Descargar'" 
-          (clicked)="onDownloadFile(item); closeMenu()">  
-        </app-download-button>
-        <app-delete-button 
-          [label]="'Eliminar'" 
-          (clicked)="onDeleteFile(item); closeMenu()">  
-        </app-delete-button>
+        @if (item.can_edit) {
+          <app-edit-button 
+            [label]="'Editar'" 
+            (clicked)="onEditFile(item); closeMenu()">  
+          </app-edit-button>
+        }
+        @if (item.can_download) {
+          <app-download-button 
+            [label]="'Descargar'" 
+            (clicked)="onDownloadFile(item); closeMenu()">  
+          </app-download-button>
+        }
+        @if (canManageAccess() && item.can_delete) {
+          <button class="menu-item" (click)="onManageAccess(item); closeMenu()">
+            <i class="fas fa-user-shield"></i> Editar acceso
+          </button>
+        }
+        @if (item.can_delete) {
+          <app-delete-button 
+            [label]="'Eliminar'" 
+            (clicked)="onDeleteFile(item); closeMenu()">  
+          </app-delete-button>
+        }
     </ng-template>
 
     <app-ui-table 

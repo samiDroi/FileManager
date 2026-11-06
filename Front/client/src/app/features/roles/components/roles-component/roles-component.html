@@ -1,0 +1,78 @@
+<section class="roles-panel">
+  <header class="panel-header">
+    <div>
+      <p class="eyebrow"><i class="fa fa-shield" aria-hidden="true"></i> Administración</p>
+      <h2>Gestión de roles</h2>
+      <p class="subtitle">
+        Crea roles globales combinando los permisos disponibles en el sistema.
+      </p>
+    </div>
+    @if (roles().length > 0) {
+      <app-create-button label="Nuevo rol" (clicked)="openCreateRole()"></app-create-button>
+    }
+  </header>
+
+  @if (roles().length === 0 && !loading()) {
+    <app-empty-state
+      imagenUrl="/images/Roles-empty.svg"
+      titulo="Aún no hay roles"
+      subtitulo="Crea tu primer rol y asígnale los permisos que necesite."
+      textoBoton="Crear rol"
+      (buttonClick)="openCreateRole()">
+    </app-empty-state>
+  } @else {
+    <div class="role-grid">
+      @for (role of roles(); track role.id) {
+        <article class="role-card">
+          <header class="role-card__header">
+            <span class="role-icon"><i class="fa fa-shield" aria-hidden="true"></i></span>
+            <div class="role-heading">
+              <h3>{{ role.name }}</h3>
+              <p>{{ role.description || 'Sin descripción' }}</p>
+            </div>
+            @if (isSystemRole(role)) {
+              <span class="system-badge">Sistema</span>
+            }
+          </header>
+
+          <div class="role-permissions">
+            @for (permission of role.permissions; track permission.id) {
+              <span class="permission-chip">{{ permission.name }}</span>
+            } @empty {
+              <span class="no-permissions">Sin permisos asignados</span>
+            }
+          </div>
+
+          <footer class="role-card__footer">
+            <span class="permission-count">
+              <i class="fa fa-key" aria-hidden="true"></i>
+              {{ role.permissions.length }} {{ role.permissions.length === 1 ? 'permiso' : 'permisos' }}
+            </span>
+            <div class="role-actions">
+              <button
+                type="button"
+                class="action-button"
+                title="Editar rol"
+                aria-label="Editar rol"
+                (click)="openEditRole(role)">
+                <i class="fa fa-pencil" aria-hidden="true"></i>
+                Editar
+              </button>
+              @if (!isSystemRole(role)) {
+                <button
+                  type="button"
+                  class="action-button danger"
+                  title="Eliminar rol"
+                  aria-label="Eliminar rol"
+                  (click)="deleteRole(role)">
+                  <i class="fa fa-trash" aria-hidden="true"></i>
+                  Eliminar
+                </button>
+              }
+            </div>
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</section>

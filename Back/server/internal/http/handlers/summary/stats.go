@@ -2,6 +2,7 @@
 package summary
 
 import (
+	"server/internal/http/middlewares"
 	"server/internal/services"
 	"server/internal/store/repository/summary"
 
@@ -17,7 +18,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	repo := summary.NewStatsRepository(db)
 	svc := services.NewStatsService(repo)
 	h := NewStatsHandler(svc)
-	e.GET("/stats/file-types", h.GetFileTypesStats)
+	e.GET("/stats/file-types", h.GetFileTypesStats, middlewares.IsAuthenticated, middlewares.RequireAdmin(db))
 }
 
 func NewStatsHandler(service *services.StatsService) *StatsHandler {

@@ -8,6 +8,10 @@ import { projectService } from '../services';
 import { ProjectData } from '../../../core';
 import { ProjectFilesModalComponent } from '../../files/components/project-files-modal';
 import { EmptyStateComponent } from '../../../shared/components';
+import { ClientService } from '../../clients/services';
+import { Router } from '@angular/router';
+import { AppRoutes } from '../../../core/routes/appRoutes';
+import { PermissionService } from '../../../core/services/permission-service';
 
 @Component({
   selector: 'app-projects-component',
@@ -18,14 +22,24 @@ import { EmptyStateComponent } from '../../../shared/components';
 })
 export class projectsComponent implements OnInit {
   private projectService = inject(projectService);
+  private clientService = inject(ClientService);
+  private router = inject(Router);
+  private permissionService = inject(PermissionService);
   protected modal = inject(MatDialog);
+
+  protected readonly canCreateProjects = computed(() => this.permissionService.can('crear', 'proyectos'));
+  protected readonly canEditProjects = computed(() => this.permissionService.can('editar', 'proyectos'));
+  protected readonly canDeleteProjects = computed(() => this.permissionService.can('eliminar', 'proyectos'));
 
   projectsMap = computed(() => this.projectService.state().projects);
   projectsList = computed(() => Array.from(this.projectsMap().values()));
   loading = computed(() => this.projectService.state().loading);
+  clientsLoading = computed(() => this.clientService.state().loading);
+  hasClients = computed(() => this.clientService.state().clients.size > 0);
 
   ngOnInit(): void {
     this.projectService.getAll(); 
+    this.clientService.getAllClients();
   }
 
   onSearch(query: string): void {
@@ -48,6 +62,15 @@ export class projectsComponent implements OnInit {
     });
   }
 
+  onEmptyStateClick(): void {
+    if (!this.hasClients()) {
+      this.router.navigate(['/', AppRoutes.features.dashboard, AppRoutes.features.clients]);
+      return;
+    }
+
+    this.openCreateProjectModal();
+  }
+
   openEditProjectModal(project: ProjectData): void {
     const dialogRef = this.modal.open(FormComponent, {
       width: '500px',
@@ -60,6 +83,10 @@ export class projectsComponent implements OnInit {
         this.projectService.onUpdate(updatedProject.id, updatedProject);
       }
     });
+  }
+
+  onDeleteProject(project: ProjectData): void {
+    void this.projectService.onDelete(project);
   }
 
   openFilesModal(project: ProjectData): void {

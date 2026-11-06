@@ -21,14 +21,24 @@
     </ng-template>
 
     <ng-template #contextMenu let-item let-closeMenu="close">
-      <app-create-button 
-        [label]="'Crear Proyecto'" 
-        (clicked)="onCreateProject(item); closeMenu()">  
-      </app-create-button>
-      <app-edit-button 
-        [label]="'Editar'" 
-        (clicked)="onEditItem(item); closeMenu()">  
-      </app-edit-button>
+      @if (canCreateProject()) {
+        <app-create-button 
+          [label]="'Crear Proyecto'" 
+          (clicked)="onCreateProject(item); closeMenu()">  
+        </app-create-button>
+      }
+      @if (canEdit()) {
+        <app-edit-button 
+          [label]="'Editar'" 
+          (clicked)="onEditItem(item); closeMenu()">  
+        </app-edit-button>
+      }
+      @if (canDelete()) {
+        <app-delete-button 
+          [label]="'Eliminar'" 
+          (clicked)="onDeleteItem(item); closeMenu()">  
+        </app-delete-button>
+      }
     </ng-template>
 
     <app-ui-table 

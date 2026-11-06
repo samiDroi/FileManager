@@ -7,9 +7,11 @@
     <h3 class="empty-state__title">{{ titulo }}</h3>
     <p class="empty-state__subtitle">{{ subtitulo }}</p>
 
-    <button class="empty-state__button" type="button" (click)="buttonClick.emit()">
-      {{ textoBoton }}
-    </button>
+    @if (showButton) {
+      <button class="empty-state__button" type="button" (click)="buttonClick.emit()">
+        {{ textoBoton }}
+      </button>
+    }
 
     <!-- <div class="empty-state__dropzone">
       <span>Arrastra y suelta aquí</span>

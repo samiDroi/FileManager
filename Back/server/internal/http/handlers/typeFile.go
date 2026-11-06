@@ -27,7 +27,7 @@ func RegisterRoutes(e *echo.Echo, db *pgxpool.Pool) {
 	h := NewTypeFileHandler(svc)
 
 	e.GET("/type-files", h.GetAllTypeFiles, middlewares.IsAuthenticated)
-	e.POST("/type-files/new", h.CreateTypeFile, middlewares.IsAuthenticated)
+	e.POST("/type-files/new", h.CreateTypeFile, middlewares.IsAuthenticated, middlewares.RequireAdmin(db), middlewares.RequirePermission(db, "tipos_archivo", "crear"))
 }
 
 func (h *TypeFileHandler) GetAllTypeFiles(ctx echo.Context) error {

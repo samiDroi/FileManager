@@ -19,12 +19,12 @@ func NewProjectService(repo *repository.ProjectRepository) *ProjectService {
 	return &ProjectService{repo: repo}
 }
 
-func (s *ProjectService) GetAllProjects(ctx context.Context) ([]dtos.ProjectResponse, error) {
-	return s.repo.GetAllProjects(ctx)
+func (s *ProjectService) GetAllProjects(ctx context.Context, userID int) ([]dtos.ProjectResponse, error) {
+	return s.repo.GetAllProjects(ctx, userID)
 }
 
-func (s *ProjectService) SearchProjects(ctx context.Context, searchParam string) ([]dtos.ProjectResponse, error) {
-	return s.repo.Search(ctx, searchParam)
+func (s *ProjectService) SearchProjects(ctx context.Context, searchParam string, userID int) ([]dtos.ProjectResponse, error) {
+	return s.repo.Search(ctx, searchParam, userID)
 }
 
 func (s *ProjectService) CreateProject(ctx context.Context, req dtos.ProjectRequest, userID int) (*dtos.ProjectResponse, error) {
@@ -51,6 +51,10 @@ func (s *ProjectService) CreateProject(ctx context.Context, req dtos.ProjectRequ
 	}
 
 	return &response, nil
+}
+
+func (s *ProjectService) DeleteProject(ctx context.Context, projectID int) error {
+	return s.repo.DeleteProject(ctx, projectID)
 }
 
 func (s *ProjectService) UpdateProject(ctx context.Context, projectID int, req dtos.ProjectRequest) (*dtos.ProjectResponse, error) {

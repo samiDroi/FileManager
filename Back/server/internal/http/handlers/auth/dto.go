@@ -13,7 +13,18 @@ type LoginRequest struct {
 
 // Angular response after registration/login
 type UserResponse struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	ID          int      `json:"id"`
+	Username    string   `json:"username"`
+	Email       string   `json:"email"`
+	AccessToken string   `json:"access_token"`
+	IsAdmin     bool     `json:"is_admin"`
+	Roles       []string `json:"roles"`
+	Permissions []string `json:"permissions"`
+}
+
+type TokenResponse struct {
+	AccessToken string   `json:"access_token"`
+	IsAdmin     bool     `json:"is_admin"`
+	Roles       []string `json:"roles"`
+	Permissions []string `json:"permissions"`
 }

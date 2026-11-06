@@ -1,6 +1,4 @@
  <div class="header">
-
-
     <!-- <button class="btn-back" (click)="goBack()">
       <i class="fa fa-arrow-left"></i> Volver
     </button> -->
@@ -23,7 +21,7 @@
 }@else {
 
 
-  @if(projects().length === 0){
+  @if(clientProjects().length === 0){
     <app-empty-state
       class="empty-state--top"
       imagenUrl="/images/Folder.svg"

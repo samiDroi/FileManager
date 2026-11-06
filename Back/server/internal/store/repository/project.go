@@ -8,6 +8,7 @@ import (
 	"server/internal/utils"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,13 +20,14 @@ func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
 	return &ProjectRepository{db: db}
 }
 
-func (r *ProjectRepository) GetAllProjects(ctx context.Context) ([]dtos.ProjectResponse, error) {
+func (r *ProjectRepository) GetAllProjects(ctx context.Context, userID int) ([]dtos.ProjectResponse, error) {
 	q := `SELECT p.id, p.name, p.client_id, p.created_at, c.name,
 		  (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
 		  FROM projects p 
-		  LEFT JOIN clients c ON c.id = p.client_id`
+		  LEFT JOIN clients c ON c.id = p.client_id
+		  WHERE ` + projectVisibilityPredicate
 
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.db.Query(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +46,7 @@ func (r *ProjectRepository) GetAllProjects(ctx context.Context) ([]dtos.ProjectR
 	return projects, nil
 }
 
-func (r *ProjectRepository) Search(ctx context.Context, searchParam string) ([]dtos.ProjectResponse, error) {
+func (r *ProjectRepository) Search(ctx context.Context, searchParam string, userID int) ([]dtos.ProjectResponse, error) {
 	if searchParam == "" {
 		return []dtos.ProjectResponse{}, nil
 	}
@@ -56,10 +58,10 @@ func (r *ProjectRepository) Search(ctx context.Context, searchParam string) ([]d
  		  (SELECT COUNT(*) FROM "files" f WHERE f.project_id = p.id) as count_files
  		  FROM projects p 
  		  LEFT JOIN clients c ON c.id = p.client_id
-        WHERE p.name ILIKE $1 OR c.name ILIKE $1
-    `
+        WHERE (p.name ILIKE $2 OR c.name ILIKE $2)
+          AND ` + projectVisibilityPredicate
 
-	rows, err := r.db.Query(ctx, query, searchPattern)
+	rows, err := r.db.Query(ctx, query, userID, searchPattern)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +138,22 @@ func (r *ProjectRepository) GetProjectById(ctx context.Context, projectID int) (
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (r *ProjectRepository) DeleteProject(ctx context.Context, projectID int) error {
+	result, err := r.db.Exec(ctx,
+		`UPDATE projects
+		 SET is_deleted = 1, updated_at = now()
+		 WHERE id = $1 AND is_deleted = 0`,
+		projectID,
+	)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 func (r *ProjectRepository) GetClientName(ctx context.Context, clientID int) (string, error) {
